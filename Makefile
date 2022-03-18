@@ -3,7 +3,7 @@ SRC_DIR=src
 
 init:
 	@if [ ! -d $(OUT_DIR) ]; then \
-		ln -sf ../../script/commit-msg.hook .git/hooks/commit-msg || exit 1; \
+		ln -sf ../../script/commit-msg .git/hooks/commit-msg || exit 1; \
 		chmod +x .git/hooks/commit-msg; \
 		mkdir $(OUT_DIR); \
 	fi
