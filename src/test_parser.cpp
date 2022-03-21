@@ -1,6 +1,6 @@
-#include "parser.h"
 #include <bitset>
 #include <iostream>
+#include "parser.h"
 // assume input is hax(without 0x)
 // and default is little endian
 
@@ -14,9 +14,11 @@ int main()
         uint64_t in;
         std::cin >> std::hex >> in;
         inst.binary = in;
-        // std::cout << std::bitset<64>(in) << std::endl;
-        // std::cout << std::bitset<64>(inst.binary) << std::endl;
-        // std::cout << inst.base.opcode << std::endl;
+        // fixme: remove follow 3 line will cause begin optimized to wrong
+        // result
+        std::cout << std::bitset<64>(in) << std::endl;
+        std::cout << std::bitset<64>(inst.binary) << std::endl;
+        std::cout << inst.base.opcode << std::endl;
 
         // ex: use base or any type of instruction of opcode to get opcode
         // inst.base.opcode

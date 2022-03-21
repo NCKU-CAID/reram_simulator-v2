@@ -1,6 +1,15 @@
-OUT_DIR=build
-SRC_DIR=src
+OUT_DIR := build
+SRC_DIR := src
+CC := g++
+# CFLAG := ???
+# SRC := $(wildcard $(SRC_DIR)/*.c)
 
+# remove test_parser to real source code in future
+# https://sites.google.com/site/mymakefile/makefile-yu-fa-jian-jie
+
+all: init format test_parser
+
+# basic environment(commit message check, build dir)
 init:
 	@if [ ! -d $(OUT_DIR) ]; then \
 		ln -sf ../../script/commit-msg .git/hooks/commit-msg || exit 1; \
@@ -15,5 +24,5 @@ format:
 clean:
 	rm $(OUT_DIR)/*
 
-test_parser: init parser_test.cpp parser.h
-	# g++ -o test_parser parser.cpp
+test_parser: $(SRC_DIR)/test_parser.cpp init
+	$(CC) -o $(OUT_DIR)/$@ $<
