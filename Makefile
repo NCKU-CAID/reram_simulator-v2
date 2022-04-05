@@ -5,6 +5,7 @@ OUT_DIR := build
 SRC_DIR := src
 TEST_DIR := test
 
+FORMAT := clang-format-12
 CC := g++
 CFLAG := -O2 -g -Wall -I
 
@@ -29,7 +30,7 @@ init:
 
 format:
 	@echo "format all files"
-	@find . -name '*.h' -or -name '*.hpp' -or -name '*.cpp' | xargs clang-format -i -style=file $1
+	@find . -name '*.h' -or -name '*.hpp' -or -name '*.cpp' | xargs $(FORMAT) -i -style=file $1
 
 clean:
 	rm $(OUT_DIR)/*
