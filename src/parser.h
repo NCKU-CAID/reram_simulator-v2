@@ -8,9 +8,10 @@
 #define OP_MASK 0xf000000000000000LL
 
 enum opcode {
-    layer_config = 0x1000000000000000LL,
-    transfer_config = 0x2000000000000000LL,
-    load_store = 0x3000000000000000LL,
+    layer_config = 0x0000000000000000LL,
+    transfer_config = 0x1000000000000000LL,
+    load = 0x2000000000000000LL,
+    store = 0x3000000000000000LL,
     conv = 0x4000000000000000LL,
     pooling = 0x5000000000000000LL,
 };
