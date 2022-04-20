@@ -5,7 +5,7 @@ OUT_DIR := build
 SRC_DIR := src
 TEST_DIR := test
 
-FORMAT := clang-format-12
+FORMAT := clang-format
 CC := g++
 CFLAG := -O2 -g -Wall -I
 
