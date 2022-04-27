@@ -1,5 +1,5 @@
-#ifndef PARSER_H
-#define PARSER_H
+#ifndef PARSER_H_
+#define PARSER_H_
 
 // TODO: check endian
 // https://stackoverflow.com/questions/2100331/c-macro-definition-to-determine-big-endian-or-little-endian-machine
@@ -77,4 +77,4 @@ struct __attribute__((__packed__)) pooling {
     uint64_t DEPT : 4;
     uint64_t opcode : 6;
 };
-#endif
+#endif // PARSER_H_
