@@ -1,13 +1,24 @@
+INST := instruction_input
+OUT := out.log
+
 OUT_DIR := build
 SRC_DIR := src
-CC := g++
-# CFLAG := ???
-# SRC := $(wildcard $(SRC_DIR)/*.c)
+TEST_DIR := test
 
-# remove test_parser to real source code in future
+FORMAT := clang-format
+CC := g++
+CFLAG := -O2 -g -Wall -I
+
+SRC := $(wildcard ./$(SRC_DIR)/*.cpp)
+SRC2 := $(notdir $(SRC))
+OBJ := $(SRC2:%.cpp=%.o)
 # https://sites.google.com/site/mymakefile/makefile-yu-fa-jian-jie
 
-all: init format test_parser
+test: all
+	$(OUT_DIR)/reram_simulator < $(TEST_DIR)/$(INST) > $(OUT_DIR)/$(OUT)
+
+all: init format $(OBJ)
+	$(CC) -o $(OUT_DIR)/reram_simulator $(OUT_DIR)/$(OBJ)
 
 # basic environment(commit message check, build dir)
 init:
@@ -19,10 +30,10 @@ init:
 
 format:
 	@echo "format all files"
-	@find . -name '*.h' -or -name '*.hpp' -or -name '*.cpp' | xargs clang-format -i -style=file $1
+	@find . -name '*.h' -or -name '*.hpp' -or -name '*.cpp' | xargs $(FORMAT) -i -style=file $1
 
 clean:
 	rm $(OUT_DIR)/*
 
-test_parser: $(SRC_DIR)/test_parser.cpp init
-	$(CC) -o $(OUT_DIR)/$@ $<
+%.o: $(SRC_DIR)/%.cpp init
+	$(CC) -o $(OUT_DIR)/$@ -c $(CFLAGS) $<
