@@ -19,7 +19,7 @@ init:
 
 format:
 	@echo "format all files"
-	@find . -name '*.h' -or -name '*.hpp' -or -name '*.cpp' | xargs clang-format -i -style=file $1
+	@find ./$(SRC_DIR) -name '*.h' -or -name '*.hpp' -or -name '*.cpp' | xargs clang-format -i -style=file $1
 
 clean:
 	rm $(OUT_DIR)/*
