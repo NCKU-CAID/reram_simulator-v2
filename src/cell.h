@@ -4,21 +4,29 @@
 class Cell
 {
 public:
-    Cell(float Area = 7.5632, string cellType = 'SRAM', int cellBit = '1');
+    Cell(int cellType = 0, int cellBit = 1, float Area = 7.5632);
     ~Cell();
-    float getPower();
+
+    bool isWLON();
     int getValue();
+    int getCellType();
+    int getCellPrecision();
     float getArea();
-    float getPartialSum();
-    void setVoltage(float VDD);
-    void setEnable(bool enable);
+    float getVoltage();
+    float getPartialSum();        // for RRAM's matrix multiplication
+    void setVoltage(float VDD);   // SRAM: VDD determines the written value,
+                                  // RRAM: VDD is the input data
+    void setEnable(bool enable);  // turn on/off the WL
+    void setValue(int Value);     // program weight
 
 private:
-    float area;       // unit: nm^2
-    string cellType;  // RRAM (1T1R), SRAM (standard 6T SRAM)
-    float BL;         // input voltage (V)
-    bool WL;          // enable
+    float area;    // unit: nm^2
+    int cellType;  // 0: SRAM (standard 6T SRAM), 1: RRAM (1T1R)
+    float BL;      // input voltage (V)
+    bool WL;       // enable
     // float SL; // RRAM partial sum output
     int value;  // stored weight
     int numBit;
-}
+};
+
+#endif

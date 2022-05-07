@@ -1,25 +1,22 @@
 #include "cell.h"
+#include <iostream>
+using namespace std;
 
-Cell::Cell(float Area = 7.5632,
-           string cellType = 'SRAM',
-           float VDD = 2.5,
-           bool enable = 0,
-           int cellBit = '1')
-    : area(Area), type(cellType), numBit(cellBit)
+Cell::Cell(int cellType, int cellBit, float Area)
+    : area(Area), cellType(cellType), numBit(cellBit)
 {
-    setVoltage(VDD);
-    setEnable(enable);
 }
 Cell::~Cell() {}
 
-float Cell::getPower()
-{
-    return /* formula */;
-}
 
 int Cell::getValue()
 {
     return value;
+}
+
+int Cell::getCellPrecision()
+{
+    return numBit;
 }
 
 float Cell::getArea()
@@ -28,18 +25,49 @@ float Cell::getArea()
 }
 
 float Cell::getPartialSum()
-{
-    // SL = BL*value; //temporary
-    // return SL;
+{  // partial sum for RRAM SL
     return BL * value;
+}
+
+float Cell::getVoltage()
+{
+    return BL;
+}
+
+bool Cell::isWLON()
+{
+    return WL;
+}
+
+int Cell::getCellType()
+{
+    return cellType;
 }
 
 void Cell::setVoltage(float VDD)
 {
-    BL = VDD;
+    switch (cellType) {
+    case 0:  // SRAM
+        BL = VDD;
+        if (VDD >= 1)
+            setValue(1);
+        else
+            setValue(0);
+        break;
+    case 1:  // RRAM
+        BL = VDD;
+        break;
+    default:
+        cout << "ERROR: Incorrect cell type" << endl;
+    }
 }
 
 void Cell::setEnable(bool enable)
 {
     WL = enable;
+}
+
+void Cell::setValue(int Value)
+{
+    value = Value;
 }
