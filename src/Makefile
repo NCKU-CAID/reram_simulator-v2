@@ -1,4 +1,4 @@
-main: cell.o tile.o main.o
+main: cell.o tile.o main.o format
 	g++ -o main main.o cell.o tile.o
 cell.o: cell.cpp cell.h
 	g++ -c cell.cpp
