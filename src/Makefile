@@ -1,13 +1,43 @@
-main: cell.o tile.o main.o format
-	g++ -o main main.o cell.o tile.o
-cell.o: cell.cpp cell.h
-	g++ -c cell.cpp
-tile.o: tile.cpp tile.h
-	g++ -c tile.cpp
-main.o: main.cpp cell.h tile.h
-	g++ -c main.cpp
+MAINS := main.cpp
+NON_FUNC := test_parser.cpp conv.cpp
+ALLSRC := $(wildcard *.cpp)
+SRC := $(filter-out $(NON_FUNC),$(ALLSRC))
+ALLOBJ := $(ALLSRC:.cpp=.o)
+OBJ := $(SRC:.cpp=.o)
+
+CXX := g++
+CXXFLAGS := -fopenmp -O3 -std=c++0x -w -g # -w disables warnings
+
+.PHONY: clean all format
+all: $(MAINS:.cpp=) 
+
+$(MAINS:.cpp=): $(OBJ) 
+	$(CXX) $(CXXFLAGS) $^ -o $@
+%.o: %.cpp %.h
+	$(CXX) -c $(CXXFLAGS) $< -o $@
+
 clean:
-	rm main*.o
+	$(RM) $(MAINS:.cpp=)
+	$(RM) $(ALLOBJ)
+
+
+# main: cell.o tile.o main.o format
+# 	g++ -o main main.o cell.o tile.o
+# conv: cell.o tile.o conv.o format
+# 	g++ -o conv conv.o cell.o tile.o
+
+
+# conv.o: conv.cpp cell.h tile.h
+# 	g++ -c -g conv.cpp
+# cell.o: cell.cpp cell.h
+# 	g++ -c -g cell.cpp
+# tile.o: tile.cpp tile.h
+# 	g++ -c -g tile.cpp
+# main.o: main.cpp cell.h tile.h
+# 	g++ -c -g main.cpp
+
+# clean:
+# 	rm $(ALLOBJ)
 
 format:
 	@echo "format all files"

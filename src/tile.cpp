@@ -7,20 +7,23 @@ using namespace std;
 
 int separateBits(int value, int CellPrecision);
 
-Tile::Tile(int Size, int cellType, int CellPrecision, float Area) : size(Size)
+Tile::Tile(int Size_w, int Size_h, int cellType, int CellPrecision, float Area)
+    : size_w(Size_w), size_h(Size_h)
 {
     if (cellType == 0 && CellPrecision > 1) {
         cout << "ERROR: SRAM can only store one bit" << endl;
         exit(1);
     }
 
-    cellArray = new Cell *[Size];
-    for (int i = 0; i < Size; ++i) {
-        cellArray[i] = new Cell[Size];
+    cellArray = new Cell *[Size_h];
+    for (int i = 0; i < Size_h; ++i) {
+        cellArray[i] = new Cell[Size_w];
     }
 
-    for (int i = 0; i < Size; ++i) {
-        for (int j = 0; j < Size; ++j) {
+    cout << "Tile size = " << Size_h << "x" << Size_w << endl;
+
+    for (int i = 0; i < Size_h; ++i) {
+        for (int j = 0; j < Size_w; ++j) {
             cellArray[i][j] = Cell(cellType, CellPrecision, Area);
             cellArray[i][j].setVoltage(0);
             cellArray[i][j].setEnable(0);
@@ -31,26 +34,49 @@ Tile::Tile(int Size, int cellType, int CellPrecision, float Area) : size(Size)
 
 Tile::~Tile()
 {
-    for (int i = 0; i < size; ++i) {
+    for (int i = 0; i < size_h; ++i) {
         delete[] cellArray[i];
     }
 }
 
-int Tile::getSize()
+int Tile::getTileHeight()
 {
-    return size;
+    return size_h;
 }
 
-void Tile::enableRow(int row, bool enable)
+int Tile::getTileWidth()
 {
-    for (int j = 0; j < size; ++j) {
-        cellArray[row][j].setEnable(enable);
+    return size_w;
+}
+
+int Tile::getCellValue(int row, int col)
+{
+    if (cellArray[row][col].isWLON())
+        return cellArray[row][col].getValue();
+    else
+        return 0;
+}
+
+int Tile::getCellPrecision(int row, int col)
+{
+    return cellArray[row][col].getCellPrecision();
+}
+
+void Tile::enableRow(int row_start, int row_end, bool enable)
+{
+    for (int row = 0; row < size_h; ++row) {
+        for (int col = 0; col < size_w; ++col) {
+            if (row >= row_start && row <= row_end)
+                cellArray[row][col].setEnable(enable);
+            else
+                cellArray[row][col].setEnable(0);
+        }
     }
 }
 
 void Tile::setRowVoltage(int row, float VDD)
 {
-    for (int j = 0; j < size; ++j) {
+    for (int j = 0; j < size_w; ++j) {
         cellArray[row][j].setVoltage(VDD);
     }
 }
@@ -72,8 +98,8 @@ void Tile::programWeights(string inFileName,
 {
     int CellPrecision = cellArray[0][0].getCellPrecision();
     int NumCellPerWeight = ceil(weight_precision / CellPrecision);
-    int maxNumKernelPerColumn = int(floor(size / (kernel_h * kernel_w)));
-    int maxNumWeightPerRow = int(floor(size / NumCellPerWeight));
+    int maxNumKernelPerColumn = int(floor(size_h / (kernel_h * kernel_w)));
+    int maxNumWeightPerRow = int(floor(size_w / NumCellPerWeight));
     int kernelSize = kernel_w * kernel_h;
 
     ifstream inFile(inFileName, ios::in);
@@ -91,7 +117,7 @@ void Tile::programWeights(string inFileName,
     cout << "Maximum number of weights stored per row = " << maxNumWeightPerRow
          << endl;
 
-    if (kernelSize > size) {
+    if (kernelSize > size_h) {
         cout << "ERROR: Kernel size should be smaller than number of weights "
                 "that can be stored in a column"
              << endl;
@@ -102,14 +128,15 @@ void Tile::programWeights(string inFileName,
     int cellValue;
     int kernelCount = 1;
     int weightCount = 0;
-    for (int col = 0; col < size; col = col + NumCellPerWeight) {
-        for (int row = 0; row < size; ++row) {
+    for (int col = 0; col < size_w; col = col + NumCellPerWeight) {
+        for (int row = 0; row < size_h; ++row) {
             if (row == kernelSize) {
                 cout << "Finished programming " << kernelCount << " kernel(s)"
                      << endl;
                 kernelCount++;
-                if (size - row < kernelSize)  // check if the remaining rows can
-                                              // accomodate the next kernel
+                if (size_h - row <
+                    kernelSize)  // check if the remaining rows can
+                                 // accomodate the next kernel
                     break;
             }
             inFile >> weight;
@@ -131,8 +158,8 @@ void Tile::programWeights(string inFileName,
     }
 
 DONE:
-    cout << "Done programming all the weights" << endl;
-    printWeightFloorPlan();
+    cout << "Done mapping all the weights" << endl;
+    printFloorPlan(0);
 }
 
 int separateBits(int value, int CellPrecision)
@@ -144,29 +171,56 @@ int separateBits(int value, int CellPrecision)
     return cellValue;
 }
 
-void Tile::printWeightFloorPlan()
+void Tile::printFloorPlan(int option)
 {
     if (cellArray[0][0].getCellType() == 0)
         cout << "Cell Type = SRAM" << endl;
     else
         cout << "Cell Type = RRAM" << endl;
 
+    switch (option) {
+    case 0:
+        cout << "Crossbar's stored weights" << endl;
+        break;
+    case 1:
+        cout << "Crossbar's wordline status" << endl;
+        break;
+    default:
+        cout << "Crossbar's input voltage" << endl;
+        break;
+    }
+
     cout << " \t";
-    for (int j = 0; j < size; ++j) {
+    for (int j = 0; j < size_w; ++j) {
         cout << j << "\t";
     }
     cout << endl;
 
-    for (int i = 0; i < size; ++i) {
+
+
+    for (int i = 0; i < size_h; ++i) {
         cout << i << "\t";
-        for (int j = 0; j < size; ++j) {
-            cout << cellArray[i][j].getValue() << "\t";
+        for (int j = 0; j < size_w; ++j) {
+            switch (option) {
+            case 0:
+                cout << cellArray[i][j].getValue() << "\t";
+                break;
+            case 1:
+                cout << cellArray[i][j].getEnable() << "\t";
+                break;
+            default:
+                cout << cellArray[i][j].getVoltage() << "\t";
+                break;
+            }
         }
         cout << endl;
     }
 }
 
 
-void Tile::computePartialSum(int col) {}
+float Tile::getCellPartialSum(int row, int col)
+{
+    return cellArray[row][col].getPartialSum();
+}
 
 float Tile::getPower(float VGG) {}

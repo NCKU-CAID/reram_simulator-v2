@@ -19,14 +19,24 @@ int Cell::getCellPrecision()
     return numBit;
 }
 
+bool Cell::getEnable()
+{
+    return WL;
+}
+
 float Cell::getArea()
 {
     return area;
 }
 
 float Cell::getPartialSum()
-{  // partial sum for RRAM SL
-    return BL * value;
+{
+    if (cellType == 0) {  // SRAM
+        if (BL != 0)
+            return value;
+    } else {  // RRAM SL
+        return BL * value;
+    }
 }
 
 float Cell::getVoltage()

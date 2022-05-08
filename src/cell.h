@@ -11,6 +11,7 @@ public:
     int getValue();
     int getCellType();
     int getCellPrecision();
+    bool getEnable();
     float getArea();
     float getVoltage();
     float getPartialSum();        // for RRAM's matrix multiplication
