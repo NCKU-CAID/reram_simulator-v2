@@ -7,7 +7,7 @@ using namespace std;
 
 int separateBits(int value, int CellPrecision);
 
-Tile::Tile(int Size_w, int Size_h, int cellType, int CellPrecision, float Area)
+Tile::Tile(int Size_w, int Size_h, int cellType, int CellPrecision)
     : size_w(Size_w), size_h(Size_h)
 {
     if (cellType == 0 && CellPrecision > 1) {
@@ -22,12 +22,22 @@ Tile::Tile(int Size_w, int Size_h, int cellType, int CellPrecision, float Area)
 
     cout << "Tile size = " << Size_h << "x" << Size_w << endl;
 
-    for (int i = 0; i < Size_h; ++i) {
-        for (int j = 0; j < Size_w; ++j) {
-            cellArray[i][j] = Cell(cellType, CellPrecision, Area);
-            cellArray[i][j].setVoltage(0);
-            cellArray[i][j].setEnable(0);
-            cellArray[i][j].setValue(0);
+    initializeCell(Size_w, Size_h, cellType, CellPrecision);
+}
+
+Tile::Tile(const Tile &tile) : size_w(tile.size_w), size_h(tile.size_h)
+{
+    // cout << "copy constructor tile" << endl;
+
+    cellArray = new Cell *[size_h];
+    for (int i = 0; i < size_h; ++i) {
+        cellArray[i] = new Cell[size_w];
+    }
+
+    for (int i = 0; i < size_h; ++i) {
+        for (int j = 0; j < size_h; ++j) {
+            cellArray[i][j] = Cell(tile.cellArray[i][j].getCellType(),
+                                   tile.cellArray[i][j].getCellPrecision());
         }
     }
 }
@@ -36,6 +46,21 @@ Tile::~Tile()
 {
     for (int i = 0; i < size_h; ++i) {
         delete[] cellArray[i];
+    }
+    delete[] cellArray;
+
+    // cout << "tile destructor" << endl;
+}
+
+void Tile::initializeCell(int Width,
+                          int Height,
+                          int cellType,
+                          int cellPrecision)
+{
+    for (int i = 0; i < Height; ++i) {
+        for (int j = 0; j < Width; ++j) {
+            cellArray[i][j] = Cell(cellType, cellPrecision);
+        }
     }
 }
 
@@ -60,6 +85,11 @@ int Tile::getCellValue(int row, int col)
 int Tile::getCellPrecision(int row, int col)
 {
     return cellArray[row][col].getCellPrecision();
+}
+
+int Tile::getCellType(int row, int col)
+{
+    return cellArray[row][col].getCellType();
 }
 
 void Tile::enableRow(int row_start, int row_end, bool enable)

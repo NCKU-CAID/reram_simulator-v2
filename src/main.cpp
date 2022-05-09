@@ -50,7 +50,7 @@ int main(int argc, char const *argv[])
         cerr << "Failed opening file" << endl;
         exit(1);
     }
-    
+
     outfile << 255 << "\t" << 2 << "\t" << 5 << endl
             << 4 << "\t" << 64 << "\t" << 10 << endl
             << 25 << "\t" << 100 << "\t" << 234 << endl;
@@ -87,8 +87,11 @@ int main(int argc, char const *argv[])
               << 6 << "\t" << 2 << "\t" << 4 << "\t" << 6 << endl;
     outfile_i.close();
 
-    convolution(inputFileName, inputPrecision, tile, kernelWidth, kernelHeight,
-                weightPrecision, outputFileName);
+
+    Tile &tileref = tile;
+
+    matrixMultiplication(inputFileName, inputPrecision, tileref, kernelWidth,
+                         kernelHeight, weightPrecision, outputFileName);
 
     return 0;
 }

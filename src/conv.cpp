@@ -10,13 +10,13 @@ using namespace std;
 int separateInputBits(int value, int CellPrecision, int input_prec);
 void initialize(int *array, int size);
 
-void convolution(string inFileName,
-                 int input_precision,
-                 Tile tile,
-                 int kernel_w,
-                 int kernel_h,
-                 int weight_precision,
-                 string outFileName)
+void matrixMultiplication(string inFileName,
+                          int input_precision,
+                          Tile &tile,
+                          int kernel_w,
+                          int kernel_h,
+                          int weight_precision,
+                          string outFileName)
 {
     ifstream inFile(inFileName, ios::in);
     if (!inFile) {
@@ -115,9 +115,6 @@ void convolution(string inFileName,
                                                   cell + k * NumCellPerWeight)
                              << endl;
 
-                        cout << " - partial sum " << k << ": " << Accumulator[k]
-                             << endl
-                             << endl;
                         Accumulator[k] +=
                             tile.getCellPartialSum(i + inputSet * kernelSize,
                                                    cell + k * NumCellPerWeight);
@@ -145,7 +142,7 @@ void convolution(string inFileName,
     delete[] Shift_Adder;
 
 DONE:
-    cout << "Done doing convolution of the input feature map" << endl;
+    cout << "Done doing matrix multiplication of the input feature map" << endl;
 }
 
 int separateInputBits(int value, int bit, int input_prec)

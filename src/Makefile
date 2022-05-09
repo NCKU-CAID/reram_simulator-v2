@@ -9,7 +9,7 @@ CXX := g++
 CXXFLAGS := -fopenmp -O3 -std=c++0x -w -g # -w disables warnings
 
 .PHONY: clean all format
-all: $(MAINS:.cpp=) 
+all: clean $(MAINS:.cpp=) format
 
 $(MAINS:.cpp=): $(OBJ) 
 	$(CXX) $(CXXFLAGS) $^ -o $@

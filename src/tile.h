@@ -10,12 +10,14 @@ public:
     Tile(int Size_w = 64,
          int Size_h = 64,
          int cellType = 0,
-         int CellPrecision = 1,
-         float Area = 7.5632);
+         int CellPrecision = 1);
+    Tile(const Tile &tile);
     ~Tile();
+    void initializeCell(int Width, int Height, int cellType, int cellPrecision);
     int getTileHeight();
     int getTileWidth();
     int getCellValue(int row, int col);
+    int getCellType(int row, int col);
     int getCellPrecision(int row, int col);
     void enableRow(int row_start, int row_end, bool enable);
     void setRowVoltage(int row, float VDD);

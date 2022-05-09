@@ -4,7 +4,7 @@
 class Cell
 {
 public:
-    Cell(int cellType = 0, int cellBit = 1, float Area = 7.5632);
+    Cell(int cellType = 0, int cellBit = 1);
     ~Cell();
 
     bool isWLON();

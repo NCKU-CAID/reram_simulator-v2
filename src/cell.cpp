@@ -1,10 +1,15 @@
 #include "cell.h"
 #include <iostream>
+// #include "param.h"
+#include "Definition.h"
 using namespace std;
 
-Cell::Cell(int cellType, int cellBit, float Area)
-    : area(Area), cellType(cellType), numBit(cellBit)
+Cell::Cell(int cellType, int cellBit) : cellType(cellType), numBit(cellBit)
 {
+    area = param->CellArea;
+    BL = 0;
+    WL = 0;
+    value = 0;
 }
 Cell::~Cell() {}
 
