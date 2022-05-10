@@ -24,8 +24,8 @@ output file name
 
 */
 
-// e.g., ./main 4 16 1 4 temp_weight 3 3 8 temp_input 2 temp_output
-// e.g., ./main 4 18 1 4 temp_weight 3 3 8 temp_input 3 temp_output
+// e.g., ./main 16 64 1 4 ./test/weight64.txt 3 3 7 8 ./test/data64.txt 8
+// result64.txt
 
 
 
@@ -47,48 +47,8 @@ int main(int argc, char const *argv[])
 
     Tile tile(tileWidth, tileHeight, cellType, cellPrecision);
 
-    ofstream outfile("temp_weight", ios::out);  // 4-bit weight
-    if (!outfile) {
-        cerr << "Failed opening file" << endl;
-        exit(1);
-    }
-
-    outfile << 255 << "\t" << 2 << "\t" << 5 << endl
-            << 4 << "\t" << 64 << "\t" << 10 << endl
-            << 25 << "\t" << 100 << "\t" << 234 << endl;
-
-    outfile << 255 << "\t" << 2 << "\t" << 5 << endl
-            << 4 << "\t" << 64 << "\t" << 10 << endl
-            << 25 << "\t" << 100 << "\t" << 234 << endl;
-
-    outfile << 255 << "\t" << 2 << "\t" << 5 << endl
-            << 4 << "\t" << 64 << "\t" << 10 << endl
-            << 25 << "\t" << 100 << "\t" << 234 << endl;
-
-    outfile << 255 << "\t" << 2 << "\t" << 5 << endl
-            << 4 << "\t" << 64 << "\t" << 10 << endl
-            << 25 << "\t" << 100 << "\t" << 234 << endl;
-
-    outfile.close();
-
     tile.programWeights(weightFileName, kernelWidth, kernelHeight,
                         kernelChannel, weightPrecision);
-
-
-
-    // input file
-    ofstream outfile_i("temp_input", ios::out);  // 2-bit input
-    if (!outfile_i) {
-        cerr << "Failed opening file" << endl;
-        exit(1);
-    }
-    outfile_i << 1 << "\t" << 2 << "\t" << 3 << "\t" << 1 << "\t" << 2 << "\t"
-              << 3 << "\t" << 1 << "\t" << 2 << "\t" << 3 << endl;
-
-    outfile_i << 2 << "\t" << 4 << "\t" << 6 << "\t" << 2 << "\t" << 4 << "\t"
-              << 6 << "\t" << 2 << "\t" << 4 << "\t" << 6 << endl;
-    outfile_i.close();
-
 
     Tile &tileref = tile;
 

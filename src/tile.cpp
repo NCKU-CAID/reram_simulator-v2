@@ -162,32 +162,39 @@ void Tile::programWeights(string inFileName,
     int cellValue;
     int kernelCount = 1;
     int weightCount = 0;
-    for (int col = 0; col < size_w; col = col + NumCellPerWeight) {
-        for (int row = 0; row < size_h; ++row) {
-            if (row == kernelSize) {
-                cout << "Finished programming " << kernelCount << " kernel(s)"
-                     << endl;
-                kernelCount++;
-                if (size_h - row <
-                    kernelSize)  // check if the remaining rows can
-                                 // accomodate the next kernel
-                    break;
-            }
-            inFile >> weight;
-            // cout << endl
-            //      << "[" << row << "][" << col << "]: Weight " << weightCount
-            //      << " = " << weight << endl;
-            for (int cell = 0; cell < NumCellPerWeight; ++cell) {  // LSB -> MSB
-                if (weight == 0)
-                    break;
-                cellValue = separateBits(weight, CellPrecision);
-                weight = weight >> CellPrecision;
-                cellArray[row][cell + col].setValue(cellValue);
-            }
-            if (inFile.eof())
-                goto DONE;
+    for (int rowset = 0; rowset < maxNumKernelPerColumn; ++rowset) {
+        if (size_h - rowset * kernelSize <
+            kernelSize) {  // check if the remaining rows can
+                           // accomodate the next kernel
+            cout << "Not enough crossbar cells to map next kernel" << endl;
+            goto DONE;
+        }
+        for (int col = 0; col < size_w; col = col + NumCellPerWeight) {
+            for (int row = 0; row < kernelSize; ++row) {
+                if (row == kernelSize - 1) {
+                    cout << "Finished programming " << kernelCount
+                         << " kernel(s)" << endl;
+                    kernelCount++;
+                }
+                inFile >> weight;
+                // cout << endl
+                //      << "[" << row << "][" << col << "]: Weight " <<
+                //      weightCount
+                //      << " = " << weight << endl;
+                for (int cell = 0; cell < NumCellPerWeight;
+                     ++cell) {  // LSB -> MSB
+                    if (weight == 0)
+                        break;
+                    cellValue = separateBits(weight, CellPrecision);
+                    weight = weight >> CellPrecision;
+                    cellArray[row + rowset * kernelSize][cell + col].setValue(
+                        cellValue);
+                }
+                if (inFile.eof())
+                    goto DONE;
 
-            weightCount++;
+                weightCount++;
+            }
         }
     }
 

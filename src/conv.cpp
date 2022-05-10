@@ -163,10 +163,12 @@ DONE:
 int separateInputBits(int value, int bit, int input_prec)
 {
     if (value > pow(2, input_prec)) {
-        cout << endl
-             // cout << "input value = " << value << ", 2^precision = " <<
-             // pow(2,input_prec) << endl
-             << "ERROR: Input value exceeds the input precision" << endl;
+        cout << endl;
+        cout << "input value = " << value
+             << ", 2^precision = " << pow(2, input_prec) << endl
+             << "ERROR: Input value exceeds the input precision / Wrong number "
+                "of input data"
+             << endl;
         exit(1);
     }
 
