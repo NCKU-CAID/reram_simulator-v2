@@ -14,6 +14,7 @@ cell precision,
 weight file name,
 kernel width,
 kernel height,
+kernel channel,
 weight precision,
 
 input file name,
@@ -37,10 +38,11 @@ int main(int argc, char const *argv[])
     string weightFileName = argv[5];
     int kernelWidth = atoi(argv[6]);
     int kernelHeight = atoi(argv[7]);
-    int weightPrecision = atoi(argv[8]);
-    string inputFileName = argv[9];
-    int inputPrecision = atoi(argv[10]);
-    string outputFileName = argv[11];
+    int kernelChannel = atoi(argv[8]);
+    int weightPrecision = atoi(argv[9]);
+    string inputFileName = argv[10];
+    int inputPrecision = atoi(argv[11]);
+    string outputFileName = argv[12];
 
 
     Tile tile(tileWidth, tileHeight, cellType, cellPrecision);
@@ -70,7 +72,7 @@ int main(int argc, char const *argv[])
     outfile.close();
 
     tile.programWeights(weightFileName, kernelWidth, kernelHeight,
-                        weightPrecision);
+                        kernelChannel, weightPrecision);
 
 
 
@@ -91,7 +93,8 @@ int main(int argc, char const *argv[])
     Tile &tileref = tile;
 
     matrixMultiplication(inputFileName, inputPrecision, tileref, kernelWidth,
-                         kernelHeight, weightPrecision, outputFileName);
+                         kernelHeight, kernelChannel, weightPrecision,
+                         outputFileName);
 
     return 0;
 }

@@ -1,5 +1,6 @@
 #include "tile.h"
 #include <math.h>
+#include <experimental/filesystem>
 #include <fstream>
 #include <iostream>
 #include "cell.h"
@@ -124,13 +125,15 @@ void Tile::writeSingleWeight(int input, int row, int col)
 void Tile::programWeights(string inFileName,
                           int kernel_w,
                           int kernel_h,
+                          int kernel_c,
                           int weight_precision)
 {
+    int kernelSize = kernel_w * kernel_h * kernel_c;
     int CellPrecision = cellArray[0][0].getCellPrecision();
     int NumCellPerWeight = ceil(weight_precision / CellPrecision);
-    int maxNumKernelPerColumn = int(floor(size_h / (kernel_h * kernel_w)));
+    int maxNumKernelPerColumn = int(floor(size_h / kernelSize));
     int maxNumWeightPerRow = int(floor(size_w / NumCellPerWeight));
-    int kernelSize = kernel_w * kernel_h;
+
 
     ifstream inFile(inFileName, ios::in);
     if (!inFile) {
@@ -141,7 +144,8 @@ void Tile::programWeights(string inFileName,
     cout << "Weight precision = " << weight_precision << endl;
     cout << "Cell precision = " << CellPrecision << endl;
     cout << "Number of cells per weight = " << NumCellPerWeight << endl;
-    cout << "Kernel size = " << kernel_w << "x" << kernel_h << endl;
+    cout << "Kernel size = " << kernel_w << "x" << kernel_h << "x" << kernel_c
+         << endl;
     cout << "Maximum number of set of weights (kernels) stored per column = "
          << maxNumKernelPerColumn << endl;
     cout << "Maximum number of weights stored per row = " << maxNumWeightPerRow
@@ -170,12 +174,9 @@ void Tile::programWeights(string inFileName,
                     break;
             }
             inFile >> weight;
-            if (inFile.eof())
-                goto DONE;
-
-            cout << endl
-                 << "[" << row << "][" << col << "]: Weight " << weightCount
-                 << " = " << weight << endl;
+            // cout << endl
+            //      << "[" << row << "][" << col << "]: Weight " << weightCount
+            //      << " = " << weight << endl;
             for (int cell = 0; cell < NumCellPerWeight; ++cell) {  // LSB -> MSB
                 if (weight == 0)
                     break;
@@ -183,13 +184,16 @@ void Tile::programWeights(string inFileName,
                 weight = weight >> CellPrecision;
                 cellArray[row][cell + col].setValue(cellValue);
             }
+            if (inFile.eof())
+                goto DONE;
+
             weightCount++;
         }
     }
 
 DONE:
     cout << "Done mapping all the weights" << endl;
-    printFloorPlan(0);
+    printFloorPlan("WeightFloorPlan", 0);
 }
 
 int separateBits(int value, int CellPrecision)
@@ -197,53 +201,66 @@ int separateBits(int value, int CellPrecision)
     int mask = pow(2, CellPrecision) - 1;
     int cellValue = value & mask;
     // cout << "mask = "<< mask << endl;
-    cout << "cell value = " << cellValue << endl;
+    // cout << "cell value = " << cellValue << endl;
     return cellValue;
 }
 
-void Tile::printFloorPlan(int option)
+void Tile::printFloorPlan(string name, int option)
 {
+    if (!experimental::filesystem::is_directory("FloorPlan") ||
+        !experimental::filesystem::exists(
+            "FloorPlan")) {  // Check if src folder exists
+        experimental::filesystem::create_directory(
+            "FloorPlan");  // create src folder
+    }
+
+    ofstream outfile("./FloorPlan/" + name, ios::out);
+    if (!outfile) {
+        cerr << "Failed opening file" << endl;
+        exit(1);
+    }
+
     if (cellArray[0][0].getCellType() == 0)
-        cout << "Cell Type = SRAM" << endl;
+        outfile << "Cell Type = SRAM" << endl;
     else
-        cout << "Cell Type = RRAM" << endl;
+        outfile << "Cell Type = RRAM" << endl;
 
     switch (option) {
     case 0:
-        cout << "Crossbar's stored weights" << endl;
+        outfile << "Crossbar's stored weights" << endl;
         break;
     case 1:
-        cout << "Crossbar's wordline status" << endl;
+        outfile << "Crossbar's wordline status" << endl;
         break;
     default:
-        cout << "Crossbar's input voltage" << endl;
+        outfile << "Crossbar's input voltage" << endl;
         break;
     }
 
-    cout << " \t";
+    outfile << " \t";
     for (int j = 0; j < size_w; ++j) {
-        cout << j << "\t";
+        outfile << j << "\t";
     }
-    cout << endl;
+    outfile << endl;
 
 
 
     for (int i = 0; i < size_h; ++i) {
-        cout << i << "\t";
+        outfile << i << "\t";
         for (int j = 0; j < size_w; ++j) {
             switch (option) {
             case 0:
-                cout << cellArray[i][j].getValue() << "\t";
+                outfile << cellArray[i][j].getValue() << "\t";
                 break;
             case 1:
-                cout << cellArray[i][j].getEnable() << "\t";
+                outfile << cellArray[i][j].getEnable() << "\t";
                 break;
             default:
-                cout << cellArray[i][j].getVoltage() << "\t";
+                outfile << cellArray[i][j].getVoltage() << "\t";
                 break;
             }
         }
-        cout << endl;
+        outfile << endl;
     }
 }
 

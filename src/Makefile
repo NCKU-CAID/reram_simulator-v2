@@ -6,13 +6,13 @@ ALLOBJ := $(ALLSRC:.cpp=.o)
 OBJ := $(SRC:.cpp=.o)
 
 CXX := g++
-CXXFLAGS := -fopenmp -O3 -std=c++0x -w -g # -w disables warnings
+CXXFLAGS := -fopenmp -O3 -std=c++17 -w -g  # -w disables warnings
 
 .PHONY: clean all format
 all: clean $(MAINS:.cpp=) format
 
 $(MAINS:.cpp=): $(OBJ) 
-	$(CXX) $(CXXFLAGS) $^ -o $@
+	$(CXX) $(CXXFLAGS) $^ -o $@ -lstdc++fs
 %.o: %.cpp %.h
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 

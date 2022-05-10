@@ -26,8 +26,9 @@ public:
     void programWeights(std::string inFileName,
                         int kernel_w = 3,
                         int kernel_h = 3,
+                        int kernel_c = 7,
                         int weight_precision = 8);
-    void printFloorPlan(int option);
+    void printFloorPlan(std::string name, int option);
     float getPower(float VDD);
 
 private:
