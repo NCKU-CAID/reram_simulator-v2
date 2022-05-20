@@ -201,6 +201,7 @@ void Tile::programWeights(string inFileName,
 DONE:
     cout << "Done mapping all the weights" << endl;
     printFloorPlan("WeightFloorPlan", 0);
+    originalWeight(NumCellPerWeight, maxNumWeightPerRow);
 }
 
 int separateBits(int value, int CellPrecision)
@@ -210,6 +211,36 @@ int separateBits(int value, int CellPrecision)
     // cout << "mask = "<< mask << endl;
     // cout << "cell value = " << cellValue << endl;
     return cellValue;
+}
+
+void Tile::originalWeight(int NumCellPerWeight, int maxNumWeightPerRow)
+{
+    ofstream outfile("./FloorPlan/originalWeight", ios::out);
+    if (!outfile) {
+        cerr << "Failed opening file" << endl;
+        exit(1);
+    }
+    outfile << " \t";
+    for (int j = 0; j < maxNumWeightPerRow; ++j) {
+        outfile << j << "\t";
+    }
+    outfile << endl;
+
+
+
+    for (int i = 0; i < size_h; ++i) {
+        outfile << i << "\t";
+        for (int j = 0; j < size_w; j = j + NumCellPerWeight) {
+            int weight = 0;
+            for (int cnt = 0; cnt < NumCellPerWeight; ++cnt) {
+                weight += (cellArray[i][cnt + j].getValue() << cnt);
+                if (cnt == NumCellPerWeight - 1) {
+                    outfile << weight << "\t";
+                }
+            }
+        }
+        outfile << endl;
+    }
 }
 
 void Tile::printFloorPlan(string name, int option)
