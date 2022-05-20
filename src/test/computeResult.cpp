@@ -7,6 +7,9 @@
 
 using namespace std;
 
+// g++ -o computeResult computeResult.cpp -lstdc++fs
+
+
 void compute(string Input, string Weight)
 {
     ifstream infile_i(Input, ios::in);

@@ -29,6 +29,7 @@ public:
                         int kernel_c = 7,
                         int weight_precision = 8);
     void printFloorPlan(std::string name, int option);
+    void originalWeight(int NumCellPerWeight, int maxNumWeightPerRow);
     float getPower(float VDD);
 
 private:
