@@ -9,10 +9,11 @@ CXX := g++
 CXXFLAGS := -fopenmp -O3 -std=c++17 -w -g  # -w disables warnings
 
 .PHONY: clean all format
-all: clean $(MAINS:.cpp=) format
+#all: clean $(MAINS:.cpp=) format
+all: clean $(MAINS:.cpp=)
 
 $(MAINS:.cpp=): $(OBJ) 
-	$(CXX) $(CXXFLAGS) $^ -o $@ -lstdc++fs
+	$(CXX) $(CXXFLAGS) $^ -o $@ -lstdc++fs -lboost_program_options
 %.o: %.cpp %.h
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
