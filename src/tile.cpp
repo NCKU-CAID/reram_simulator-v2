@@ -4,6 +4,8 @@
 #include <fstream>
 #include <iostream>
 #include "cell.h"
+#include "param.h"
+
 using namespace std;
 
 int separateBits(int value, int CellPrecision);
@@ -151,7 +153,7 @@ void Tile::programWeights(string inFileName,
     cout << "Maximum number of weights stored per row = " << maxNumWeightPerRow
          << endl;
 
-    if (kernelSize > size_h) {
+    if (kernelSize > size_h) { //this is wrong, should accumulate the result, fix later
         cout << "ERROR: Kernel size should be smaller than number of weights "
                 "that can be stored in a column"
              << endl;
@@ -308,4 +310,36 @@ float Tile::getCellPartialSum(int row, int col)
     return cellArray[row][col].getPartialSum();
 }
 
-float Tile::getPower(float VGG) {}
+float Tile::getPower(int input, float VGG) 
+{
+    int col;
+    if(input == 0)
+        col = 0;
+    else
+        col = floor(log2(input)) + 1;
+
+    // cout << "VGG: " << VGG << endl;
+    cout << "input: "<<input << ", power: " ;
+
+
+    if (VGG == 0.9f)
+    {
+        cout << powerTable6[0][col] << "E-05" << endl;
+        return powerTable6[0][col];
+    }
+    else if (VGG == 0.8f)
+    {
+        cout << powerTable6[1][col] << "E-05" << endl;
+        return powerTable6[1][col];
+    }
+    else if (VGG == 0.7f)
+    {
+        cout << powerTable6[2][col] << "E-05" << endl;
+        return powerTable6[2][col];
+    }
+    else
+    {
+        cout << "no corresponding power table for VGG = " << VGG  << endl;
+        return -1;
+    }
+}

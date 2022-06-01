@@ -1,3 +1,6 @@
+#ifndef PARAM_H
+#define PARAM_H
+
 class Param
 {
 public:
@@ -6,3 +9,5 @@ public:
 
     float CellArea;
 };
+
+#endif

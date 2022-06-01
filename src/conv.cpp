@@ -5,6 +5,7 @@
 #include <string>
 #include "cell.h"
 #include "tile.h"
+#include "result.h"
 
 using namespace std;
 
@@ -18,7 +19,8 @@ void matrixMultiplication(string inFileName,
                           int kernel_h,
                           int kernel_c,
                           int weight_precision,
-                          string outFileName)
+                          string outFileName,
+                          float ADC_voltage)
 {
     ifstream inFile(inFileName, ios::in);
     if (!inFile) {
@@ -61,6 +63,11 @@ void matrixMultiplication(string inFileName,
 
     // RRAM matrix multiplication
     cout << endl << "Start matrix multiplication" << endl;
+
+    Result *result = new Result();
+    result->setPower(0);
+    float tempOut = 0;
+
     for (int inputSet = 0; inputSet < maxNumKernelPerColumn; ++inputSet) {
         int *inputData = new int[kernelSize];
         for (int i = 0; i < kernelSize; ++i) {
@@ -88,6 +95,7 @@ void matrixMultiplication(string inFileName,
                        1);  // enable rows for a matrix multiplication
         tile.printFloorPlan("WLFloorPlan", 1);
 
+
         for (int i_prec = input_precision - 1; i_prec >= 0;
              --i_prec)  // for the <first> bit of input
         {
@@ -111,6 +119,7 @@ void matrixMultiplication(string inFileName,
                     // cout << "Shift partial sum " << k << ": " <<
                     // Accumulator[k]
                     //      << endl;
+                    tempOut = 0;
 
                     for (int i = 0; i < kernelSize;
                          ++i)  // for the <first> input for the <first> kernel
@@ -129,14 +138,19 @@ void matrixMultiplication(string inFileName,
                         //                           NumCellPerWeight)
                         //      << endl;
 
-                        Accumulator[k] +=
-                            tile.getCellPartialSum(i + inputSet * kernelSize,
-                                                   cell + k * NumCellPerWeight);
+                        float partialSUm = tile.getCellPartialSum(i + inputSet * kernelSize,
+                                                   cell + k * NumCellPerWeight); 
+                        Accumulator[k] += partialSUm;
+                        tempOut += partialSUm;
+                                                    
                         // cout << " - partial sum " << k << ": " <<
                         // Accumulator[k]
                         //      << endl
                         //      << endl;
+                       
+
                     }
+                    result->storePower(tile.getPower(tempOut, ADC_voltage));
                 }
                 Shift_Adder[k] += Accumulator[k];
                 cout << "S&H " << k << ": " << Shift_Adder[k] << endl;
@@ -157,6 +171,7 @@ void matrixMultiplication(string inFileName,
     delete[] Shift_Adder;
 
 DONE:
+    cout << "ADC power: " << result->getPower() << "E-05 (W)" << endl;
     cout << "Done doing matrix multiplication of the input feature map" << endl;
 }
 
