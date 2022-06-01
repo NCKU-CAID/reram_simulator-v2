@@ -20,7 +20,7 @@ void matrixMultiplication(string inFileName,
                           int kernel_c,
                           int weight_precision,
                           string outFileName,
-                          float SRAMvoltage = 0.9)
+                          float ADC_voltage)
 {
     ifstream inFile(inFileName, ios::in);
     if (!inFile) {
@@ -150,7 +150,7 @@ void matrixMultiplication(string inFileName,
                        
 
                     }
-                    result->storePower(tile.getPower(tempOut, SRAMvoltage));
+                    result->storePower(tile.getPower(tempOut, ADC_voltage));
                 }
                 Shift_Adder[k] += Accumulator[k];
                 cout << "S&H " << k << ": " << Shift_Adder[k] << endl;

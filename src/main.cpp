@@ -35,6 +35,7 @@ int main(int argc, char const *argv[])
 {
 	int tileWidth,tileHeight,cellType,cellPrecision,kernelWidth,kernelHeight,kernelChannel,weightPrecision,inputPrecision;
 	string weightFileName,inputFileName, outputFileName;
+	float ADCVoltage;
 	
 	try {
 		BPO::options_description bOptions("Allowed Options");
@@ -50,7 +51,8 @@ int main(int argc, char const *argv[])
 							  ("weight_precision,wp",BPO::value<int>(&weightPrecision)->default_value(8)->value_name("1~8"),"The precision of a weight, default is 「8」")
 							  ("input_file,infile",BPO::value<string>(&inputFileName)->required(),"Input file")
 							  ("input_precision,inp",BPO::value<int>(&inputPrecision)->default_value(8)->value_name("1~8"),"The precision of a input feature, default is 「8」")
-							  ("output_file,ofile",BPO::value<string>(&outputFileName)->required(),"Output file name");
+							  ("output_file,ofile",BPO::value<string>(&outputFileName)->required(),"Output file name")
+							  ("ADC_voltage",BPO::value<float>(&ADCVoltage)->default_value(0.9)->value_name("0.7, 0.8 or 0.9"),"The voltage for ADC, default is 「0.9」");
 	
 		BPO::variables_map mVMap;
 		BPO::store(BPO::parse_command_line(argc,argv,bOptions),mVMap);
@@ -87,6 +89,7 @@ int main(int argc, char const *argv[])
 	cout << "The channel number of a kernel is: " << kernelChannel << endl;
 	cout << "The precision of a weight is: " << weightPrecision << " bits" << endl;
 	cout << "The precision of a input feature is: " << inputPrecision << " bits" << endl;
+	cout << "The ADC voltage is: " << ADCVoltage << endl;
 
 	cout << "---------------------------------------------------------------------" << endl;
 	
@@ -117,6 +120,6 @@ int main(int argc, char const *argv[])
     tile.programWeights(weightFileName, kernelWidth, kernelHeight,kernelChannel, weightPrecision);
 	cout << "---------------------Programming Weights Finish----------------------" << endl;
 	Tile &tileref = tile;
-    matrixMultiplication(inputFileName, inputPrecision, tileref, kernelWidth,kernelHeight, kernelChannel, weightPrecision,outputFileName);
+    matrixMultiplication(inputFileName, inputPrecision, tileref, kernelWidth,kernelHeight, kernelChannel, weightPrecision,outputFileName, ADCVoltage);
     return 0;
 }

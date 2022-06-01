@@ -324,17 +324,17 @@ float Tile::getPower(int input, float VGG)
 
     if (VGG == 0.9f)
     {
-        cout << powerTable6[0][col] << endl;
+        cout << powerTable6[0][col] << "E-05" << endl;
         return powerTable6[0][col];
     }
     else if (VGG == 0.8f)
     {
-        // cout << powerTable6[1][col] << endl;
+        cout << powerTable6[1][col] << "E-05" << endl;
         return powerTable6[1][col];
     }
     else if (VGG == 0.7f)
     {
-        // cout << powerTable6[2][col] << endl;
+        cout << powerTable6[2][col] << "E-05" << endl;
         return powerTable6[2][col];
     }
     else
