@@ -53,7 +53,6 @@ int main(int argc, char const *argv[])
 							  ("input_file,infile",BPO::value<string>(&inputFileName)->required(),"Input file")
 							  ("input_precision,inp",BPO::value<int>(&inputPrecision)->default_value(8)->value_name("1~8"),"The precision of a input feature, default is 「8」")
 							  ("output_file,ofile",BPO::value<string>(&outputFileName)->required(),"Output file name")
-							//   ("ADC_voltage,vADC",BPO::value<float>(&ADCVoltage)->default_value(0.9)->value_name("0.7, 0.8 or 0.9"),"The voltage for ADC, default is 「0.9」");
 							  ("ADC_voltage,vADC",BPO::value<string>(&ADC_V)->default_value("0.9")->value_name("0.7, 0.8 or 0.9"),"The voltage for ADC, default is 「0.9」");
 	
 		BPO::variables_map mVMap;
