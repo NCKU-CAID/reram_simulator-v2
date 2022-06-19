@@ -6,6 +6,13 @@
 #include <boost/program_options.hpp>
 using namespace std;
 namespace BPO = boost::program_options;
+#ifndef FALSE
+#define FALSE               0
+#endif
+
+#ifndef TRUE
+#define TRUE                1
+#endif
 
 /* INPUT FORMAT
 
@@ -33,7 +40,7 @@ output file name
 
 int main(int argc, char const *argv[])
 {
-	int tileWidth,tileHeight,cellType,cellPrecision,kernelWidth,kernelHeight,kernelChannel,weightPrecision,inputPrecision;
+	int tileWidth,tileHeight,cellType,cellPrecision,kernelWidth,kernelHeight,kernelChannel,weightPrecision, inputPrecision, weightSign;
 	string weightFileName,inputFileName, outputFileName;
 	string ADC_V;
 	float ADCVoltage;
@@ -50,10 +57,12 @@ int main(int argc, char const *argv[])
 							  ("kernel_height,kh",BPO::value<int>(&kernelHeight)->default_value(3)->value_name("1~5"),"The height of a kernel, must as same as kernel width, default is 「3」")
 							  ("kernel_channel,kc",BPO::value<int>(&kernelChannel)->default_value(7)->value_name("1~7"),"The channel number of a kernel, default is 「7」")
 							  ("weight_precision,wp",BPO::value<int>(&weightPrecision)->default_value(8)->value_name("1~8"),"The precision of a weight, default is 「8」")
+							  ("signed_weight,sw",BPO::value<int>(&weightSign)->default_value(2)->value_name("0, 1, or 2"),"The sign of weights, 0: unsigned, 1: signed (1's complement), 2: signed (2's complement), default is 「2」")
 							  ("input_file,infile",BPO::value<string>(&inputFileName)->required(),"Input file")
 							  ("input_precision,inp",BPO::value<int>(&inputPrecision)->default_value(8)->value_name("1~8"),"The precision of a input feature, default is 「8」")
 							  ("output_file,ofile",BPO::value<string>(&outputFileName)->required(),"Output file name")
 							  ("ADC_voltage,vADC",BPO::value<string>(&ADC_V)->default_value("0.9")->value_name("0.7, 0.8 or 0.9"),"The voltage for ADC, default is 「0.9」");
+
 	
 		BPO::variables_map mVMap;
 		BPO::store(BPO::parse_command_line(argc,argv,bOptions),mVMap);
@@ -91,6 +100,10 @@ int main(int argc, char const *argv[])
 	cout << "The kernel height is: " << kernelHeight << endl;
 	cout << "The channel number of a kernel is: " << kernelChannel << endl;
 	cout << "The precision of a weight is: " << weightPrecision << " bits" << endl;
+	if(weightSign)
+		cout << "Weights are signed values with" << weightSign << "'s complement" << endl;
+	else
+		cout << "Weights are unsigned values" << endl;
 	cout << "The precision of a input feature is: " << inputPrecision << " bits" << endl;
 	cout << "The ADC voltage is: " << ADCVoltage << endl;
 
@@ -123,6 +136,6 @@ int main(int argc, char const *argv[])
     tile.programWeights(weightFileName, kernelWidth, kernelHeight,kernelChannel, weightPrecision);
 	cout << "---------------------Programming Weights Finish----------------------" << endl;
 	Tile &tileref = tile;
-    matrixMultiplication(inputFileName, inputPrecision, tileref, kernelWidth,kernelHeight, kernelChannel, weightPrecision,outputFileName, ADCVoltage);
+    matrixMultiplication(inputFileName, inputPrecision, tileref, kernelWidth,kernelHeight, kernelChannel, weightPrecision, weightSign, outputFileName, ADCVoltage);
     return 0;
 }
