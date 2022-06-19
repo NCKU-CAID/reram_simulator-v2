@@ -42,6 +42,7 @@ int main(int argc, char const *argv[])
 {
 	int tileWidth,tileHeight,cellType,cellPrecision,kernelWidth,kernelHeight,kernelChannel,weightPrecision, inputPrecision, weightSign;
 	string weightFileName,inputFileName, outputFileName;
+	string ADC_V;
 	float ADCVoltage;
 	
 	try {
@@ -60,7 +61,8 @@ int main(int argc, char const *argv[])
 							  ("input_file,infile",BPO::value<string>(&inputFileName)->required(),"Input file")
 							  ("input_precision,inp",BPO::value<int>(&inputPrecision)->default_value(8)->value_name("1~8"),"The precision of a input feature, default is 「8」")
 							  ("output_file,ofile",BPO::value<string>(&outputFileName)->required(),"Output file name")
-							  ("ADC_voltage, vol",BPO::value<float>(&ADCVoltage)->default_value(0.9)->value_name("0.7, 0.8 or 0.9"),"The voltage for ADC, default is 「0.9」");
+							  ("ADC_voltage,vADC",BPO::value<string>(&ADC_V)->default_value("0.9")->value_name("0.7, 0.8 or 0.9"),"The voltage for ADC, default is 「0.9」");
+
 	
 		BPO::variables_map mVMap;
 		BPO::store(BPO::parse_command_line(argc,argv,bOptions),mVMap);
@@ -80,6 +82,8 @@ int main(int argc, char const *argv[])
 		cout << "Error: " << e.what() << endl;
 		return 1;
 	}
+	
+	ADCVoltage = stof(ADC_V);
 
 	cout << "--------------The arguments you setup in this simulation--------------" << endl;
 
