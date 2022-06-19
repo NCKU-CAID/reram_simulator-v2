@@ -10,7 +10,7 @@ using namespace std;
 // g++ -o computeResult computeResult.cpp -lstdc++fs
 
 
-void compute(string Input, string Weight)
+void compute(string Input, string Weight, string Output)
 {
     ifstream infile_i(Input, ios::in);
     if (!infile_i) {
@@ -50,7 +50,7 @@ void compute(string Input, string Weight)
         experimental::filesystem::create_directory(
             "computedResult");  // create src folder
     }
-    ofstream outfile("./computedResult/computedOutput", ios::out);
+    ofstream outfile("./computedResult/"+Output, ios::out);
     if (!outfile) {
         cerr << "Failed opening file" << endl;
         exit(1);
@@ -82,6 +82,6 @@ void compute(string Input, string Weight)
 
 int main(int argc, char const *argv[])
 {
-    compute(argv[1], argv[2]);
+    compute(argv[1], argv[2], argv[3]);
     return 0;
 }

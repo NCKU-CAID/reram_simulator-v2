@@ -19,6 +19,7 @@ void matrixMultiplication(string inFileName,
                           int kernel_h,
                           int kernel_c,
                           int weight_precision,
+                          int signed_weight,
                           string outFileName,
                           float ADC_voltage)
 {
@@ -46,7 +47,7 @@ void matrixMultiplication(string inFileName,
 
     int *Accumulator = new int[maxNumWeightPerRow];
     int *Shift_Adder = new int[maxNumWeightPerRow];
-
+    
 
     string outName = "./output/" + outFileName;
     if (!experimental::filesystem::is_directory("output") ||
@@ -96,19 +97,49 @@ void matrixMultiplication(string inFileName,
         tile.printFloorPlan("WLFloorPlan", 1);
 
 
+        //--------------------------- calculate # of negative values --------------------
+
+        //for recording number of <0 in a weight column (NumCellPerWeight columns)
+        int *negative_count = new int[maxNumWeightPerRow];
+        initialize(negative_count, maxNumWeightPerRow);
+
+        if(signed_weight)
+        {
+            for (int MSBcell = NumCellPerWeight - 1; MSBcell < tile.getTileWidth();
+                            MSBcell=MSBcell+NumCellPerWeight)  // for the <first> bit of weight
+            {
+                int k = (MSBcell+1)/NumCellPerWeight-1;
+                for(int i = 0; i<kernelSize; ++i)
+                {
+                    int msb_mask = 1 << (CellPrecision - 1);
+                    int cellvalue = tile.getCellValue(i + inputSet*kernelSize, MSBcell);
+                    int msb = cellvalue&msb_mask;
+                    if(msb)
+                    {
+                        negative_count[k] += 1;                        
+                    }
+                    // cout << "cell value: "<< cellvalue << ", MSB: "<<msb<<endl;
+
+                }
+                // cout << "negative value of "<< k << "'s weight column: " << negative_count[k] << endl;
+            }
+        }
+        //--------------------------- calculate # of negative values --------------------
+
+
         for (int i_prec = input_precision - 1; i_prec >= 0;
              --i_prec)  // for the <first> bit of input
         {
             initialize(Accumulator, maxNumWeightPerRow);
-
+            cout << "--------- input bit " << i_prec << " ------------" << endl;
 
             for (int k = 0; k < maxNumWeightPerRow;
                  ++k)  // for the <first> set of kernel in the kth (weight
                        // precision) columns
             {
                 Shift_Adder[k] = Shift_Adder[k] << 1;
-                // cout << "Shift partial sum for input bit " << k << ": "
-                // << Shift_Adder[k] << endl;
+                cout << "Shift partial sum for input bit " << k << ": "
+                << Shift_Adder[k] << endl;
 
                 cout << "----- Kernel " << k << "-----" << endl;
                 for (int cell = NumCellPerWeight - 1; cell >= 0;
@@ -125,6 +156,7 @@ void matrixMultiplication(string inFileName,
                          ++i)  // for the <first> input for the <first> kernel
                                // element
                     {
+                        
                         // cout << " - Input " << inputData[i];
                         int inputBit = separateInputBits(inputData[i], i_prec,
                                                          input_precision);
@@ -151,24 +183,51 @@ void matrixMultiplication(string inFileName,
 
                     }
                     result->storePower(tile.getPower(tempOut, ADC_voltage));
-                }
+                }                
                 Shift_Adder[k] += Accumulator[k];
                 cout << "S&H " << k << ": " << Shift_Adder[k] << endl;
+
+
             }
-            cout << "--------- input bit " << i_prec << " ------------" << endl;
+           
             tile.printFloorPlan("InputFloorPlan", 2);
         }
 
 
+        int outresult = 0;
 
         for (int k = 0; k < maxNumWeightPerRow; ++k) {
-            outfile << Shift_Adder[k] << "\t";
+            switch(signed_weight)
+            {
+                case 0: 
+                    outfile << Shift_Adder[k] << "\t";
+                    break;
+                case 1:
+                    outresult = Shift_Adder[k] - negative_count[k]*(pow(2, weight_precision)-1); 
+                    if (outresult < 0)
+                        outfile << 0 << "\t";
+                    else
+                        outfile << outresult << "\t";
+                    break;
+                default: 
+                    // cout << "# of negative values in " << k << "'s weight: " << negative_count[k] << endl;
+                    // cout << Shift_Adder[k] << endl;
+                    // cout << Shift_Adder[k] - negative_count[k]*((pow(2, weight_precision)-1) + 1) << endl;
+                    outresult = Shift_Adder[k] - negative_count[k]*((pow(2, weight_precision)-1) + 1); 
+                    if (outresult < 0)
+                        outfile << 0 << "\t";
+                    else
+                        outfile << outresult << "\t";
+                    break;
+            }
+            
         }
         outfile << endl;
     }
 
     delete[] Accumulator;
     delete[] Shift_Adder;
+
 
 DONE:
     cout << "ADC power: " << result->getPower() << "E-05 (W)" << endl;
