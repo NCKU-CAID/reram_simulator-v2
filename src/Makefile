@@ -1,5 +1,5 @@
 MAINS := main.cpp
-NON_FUNC := test_parser.cpp conv.cpp
+NON_FUNC := test_parser.cpp conv.cpp layer_conv.cpp
 ALLSRC := $(wildcard *.cpp)
 SRC := $(filter-out $(NON_FUNC),$(ALLSRC))
 ALLOBJ := $(ALLSRC:.cpp=.o)

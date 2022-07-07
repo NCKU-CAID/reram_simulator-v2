@@ -20,16 +20,22 @@ void matrixMultiplication(string inFileName,
                           int kernel_c,
                           int weight_precision,
                           int signed_weight,
-                          string outFileName,
-                          float ADC_voltage)
+                          // string outFileName,
+                          string &mat_result,
+                          float ADC_voltage,
+                          int relu_on)
 {
     ifstream inFile(inFileName, ios::in);
     if (!inFile) {
-        cerr << "Failed opening file" << endl;
+        cerr << "Failed opening file: " << inFileName << endl;
         exit(1);
     }
 
+
     int kernelSize = kernel_w * kernel_h * kernel_c;
+    if (kernelSize>tile.getTileHeight())
+        kernelSize = tile.getTileHeight(); //the incomplete channels (the rest of the first 64 weights) will be sequentially done
+
     int CellPrecision = tile.getCellPrecision(0, 0);
     int NumCellPerWeight = ceil(weight_precision / CellPrecision);
     int maxNumKernelPerColumn = int(floor(tile.getTileHeight() / kernelSize));
@@ -49,18 +55,18 @@ void matrixMultiplication(string inFileName,
     int *Shift_Adder = new int[maxNumWeightPerRow];
     
 
-    string outName = "./output/" + outFileName;
-    if (!experimental::filesystem::is_directory("output") ||
-        !experimental::filesystem::exists(
-            "output")) {  // Check if src folder exists
-        experimental::filesystem::create_directory(
-            "output");  // create src folder
-    }
-    ofstream outfile(outName, ios::out);
-    if (!outfile) {
-        cerr << "Failed opening file" << endl;
-        exit(1);
-    }
+    // string outName = "./output/" + outFileName;
+    // if (!experimental::filesystem::is_directory("output") ||
+    //     !experimental::filesystem::exists(
+    //         "output")) {  // Check if src folder exists
+    //     experimental::filesystem::create_directory(
+    //         "output");  // create src folder
+    // }
+    // ofstream outfile(outName, ios::out);
+    // if (!outfile) {
+    //     cerr << "Failed opening file: " << outName << endl;
+    //     exit(1);
+    // }
 
     // RRAM matrix multiplication
     cout << endl << "Start matrix multiplication" << endl;
@@ -72,12 +78,19 @@ void matrixMultiplication(string inFileName,
     for (int inputSet = 0; inputSet < maxNumKernelPerColumn; ++inputSet) {
         int *inputData = new int[kernelSize];
         for (int i = 0; i < kernelSize; ++i) {
-            inFile >> inputData[i];
+           
             if (inFile.eof()) {
-                cout << "End of File" << endl;
-                break;
+                // cout << "End of File" << endl;
+                inputData[i]=0;
+                // cout << inputData[i] << '\t';
+                
+            }
+            else{
+                inFile >> inputData[i];
+                // cout << inputData[i] << '\t';
             }
         }
+        cout << endl;
         initialize(Accumulator, maxNumWeightPerRow);
         initialize(Shift_Adder, maxNumWeightPerRow);
 
@@ -200,29 +213,40 @@ void matrixMultiplication(string inFileName,
             switch(signed_weight)
             {
                 case 0: 
-                    outfile << Shift_Adder[k] << "\t";
+                    // outfile << Shift_Adder[k] << "\t";
+                    mat_result.append(to_string(Shift_Adder[k])+"\t");
                     break;
                 case 1:
                     outresult = Shift_Adder[k] - negative_count[k]*(pow(2, weight_precision)-1); 
                     if (outresult < 0)
-                        outfile << 0 << "\t";
+                        // outfile << 0 << "\t";
+                        mat_result.append(to_string(0)+"\t");
                     else
-                        outfile << outresult << "\t";
+                        // outfile << outresult << "\t";
+                        mat_result.append(to_string(outresult)+"\t");
+
                     break;
                 default: 
                     // cout << "# of negative values in " << k << "'s weight: " << negative_count[k] << endl;
                     // cout << Shift_Adder[k] << endl;
                     // cout << Shift_Adder[k] - negative_count[k]*((pow(2, weight_precision)-1) + 1) << endl;
                     outresult = Shift_Adder[k] - negative_count[k]*((pow(2, weight_precision)-1) + 1); 
-                    if (outresult < 0)
-                        outfile << 0 << "\t";
+                    if (relu_on && outresult < 0)
+                        // outfile << 0 << "\t";
+                        mat_result.append(to_string(0)+"\t");
+
+
                     else
-                        outfile << outresult << "\t";
+                        // outfile << outresult << "\t";
+                        mat_result.append(to_string(outresult)+"\t");
+
                     break;
             }
             
         }
-        outfile << endl;
+        // outfile << endl;
+       // mat_result.append("\n");
+
     }
 
     delete[] Accumulator;
