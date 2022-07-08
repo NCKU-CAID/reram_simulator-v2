@@ -131,6 +131,8 @@ void Tile::programWeights(string inFileName,
                           int weight_precision)
 {
     int kernelSize = kernel_w * kernel_h * kernel_c;
+    if(kernelSize>size_h)
+        kernelSize = size_h;
     int CellPrecision = cellArray[0][0].getCellPrecision();
     int NumCellPerWeight = ceil(weight_precision / CellPrecision);
     int maxNumKernelPerColumn = int(floor(size_h / kernelSize));
@@ -139,7 +141,7 @@ void Tile::programWeights(string inFileName,
 
     ifstream inFile(inFileName, ios::in);
     if (!inFile) {
-        cerr << "Failed opening file" << endl;
+        cerr << "Failed opening file: " << inFileName << endl;
         exit(1);
     }
 
@@ -154,10 +156,11 @@ void Tile::programWeights(string inFileName,
          << endl;
 
     if (kernelSize > size_h) { //this is wrong, should accumulate the result, fix later
-        cout << "ERROR: Kernel size should be smaller than number of weights "
-                "that can be stored in a column"
-             << endl;
-        exit(1);
+        // cout << "ERROR: Kernel size should be smaller than number of weights "
+        //         "that can be stored in a column"
+        //      << endl;
+        // exit(1);
+        kernelSize = size_h;
     }
 
     int weight;
@@ -203,7 +206,7 @@ void Tile::programWeights(string inFileName,
 DONE:
     cout << "Done mapping all the weights" << endl;
     printFloorPlan("WeightFloorPlan", 0);
-    originalWeight(NumCellPerWeight, maxNumWeightPerRow);
+    originalWeight(NumCellPerWeight, maxNumWeightPerRow, weight_precision);
 }
 
 int separateBits(int value, int CellPrecision)
@@ -215,7 +218,7 @@ int separateBits(int value, int CellPrecision)
     return cellValue;
 }
 
-void Tile::originalWeight(int NumCellPerWeight, int maxNumWeightPerRow)
+void Tile::originalWeight(int NumCellPerWeight, int maxNumWeightPerRow, int weightPrecision, int sign)
 {
     ofstream outfile("./FloorPlan/originalWeight", ios::out);
     if (!outfile) {
@@ -237,7 +240,10 @@ void Tile::originalWeight(int NumCellPerWeight, int maxNumWeightPerRow)
             for (int cnt = 0; cnt < NumCellPerWeight; ++cnt) {
                 weight += (cellArray[i][cnt + j].getValue() << cnt);
                 if (cnt == NumCellPerWeight - 1) {
-                    outfile << weight << "\t";
+                    if (sign && weight > (pow(2,weightPrecision)/2 -1))
+                        outfile << weight - pow(2,weightPrecision) << "\t";
+                    else
+                        outfile << weight << "\t";
                 }
             }
         }
@@ -319,22 +325,22 @@ float Tile::getPower(int input, float VGG)
         col = floor(log2(input)) + 1;
 
     // cout << "VGG: " << VGG << endl;
-    cout << "input: "<<input << ", power: " ;
+    // cout << "input: "<<input << ", power: " ;
 
 
     if (VGG == 0.9f)
     {
-        cout << powerTable6[0][col] << "E-05" << endl;
+        // cout << powerTable6[0][col] << "E-05" << endl;
         return powerTable6[0][col];
     }
     else if (VGG == 0.8f)
     {
-        cout << powerTable6[1][col] << "E-05" << endl;
+        // cout << powerTable6[1][col] << "E-05" << endl;
         return powerTable6[1][col];
     }
     else if (VGG == 0.7f)
     {
-        cout << powerTable6[2][col] << "E-05" << endl;
+        // cout << powerTable6[2][col] << "E-05" << endl;
         return powerTable6[2][col];
     }
     else
