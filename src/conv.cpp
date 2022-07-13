@@ -23,7 +23,9 @@ void matrixMultiplication(string inFileName,
                           // string outFileName,
                           string &mat_result,
                           float ADC_voltage,
-                          int relu_on)
+                          float &ADC_power,
+                          int relu_on,
+                          int kernel_n)
 {
     ifstream inFile(inFileName, ios::in);
     if (!inFile) {
@@ -40,6 +42,8 @@ void matrixMultiplication(string inFileName,
     int NumCellPerWeight = ceil(weight_precision / CellPrecision);
     int maxNumKernelPerColumn = int(floor(tile.getTileHeight() / kernelSize));
     int maxNumWeightPerRow = int(floor(tile.getTileWidth() / NumCellPerWeight));
+    if (maxNumWeightPerRow > kernel_n)
+        maxNumWeightPerRow = kernel_n;
 
     // cout << "Weight precision = " << weight_precision << endl;
     // cout << "Cell precision = " << CellPrecision << endl;
@@ -75,7 +79,9 @@ void matrixMultiplication(string inFileName,
     result->setPower(0);
     float tempOut = 0;
 
-    for (int inputSet = 0; inputSet < maxNumKernelPerColumn; ++inputSet) {
+    // for (int inputSet = 0; inputSet < maxNumKernelPerColumn; ++inputSet) { 
+    // remove this part (the sparse usage of rram cells) temporarily til we think of new mapping method
+    int inputSet = 0;
         int *inputData = new int[kernelSize];
         for (int i = 0; i < kernelSize; ++i) {
            
@@ -113,8 +119,13 @@ void matrixMultiplication(string inFileName,
         //--------------------------- calculate # of negative values --------------------
 
         //for recording number of <0 in a weight column (NumCellPerWeight columns)
-        int *negative_count = new int[maxNumWeightPerRow];
-        initialize(negative_count, maxNumWeightPerRow);
+        int **negative_count = new int*[maxNumWeightPerRow];
+        for (int i = 0; i< maxNumWeightPerRow; ++i)
+        {
+            negative_count[i] = new int[tile.getTileHeight()];
+            initialize(negative_count[i], tile.getTileHeight());   
+        }
+        
 
         if(signed_weight)
         {
@@ -129,12 +140,12 @@ void matrixMultiplication(string inFileName,
                     int msb = cellvalue&msb_mask;
                     if(msb)
                     {
-                        negative_count[k] += 1;                        
+                        negative_count[k][i] = 1;                        
                     }
                     // cout << "cell value: "<< cellvalue << ", MSB: "<<msb<<endl;
+                    // cout << "negative value of "<< k << "'s weight column: " << negative_count[k][i] << endl;
 
                 }
-                // cout << "negative value of "<< k << "'s weight column: " << negative_count[k] << endl;
             }
         }
         //--------------------------- calculate # of negative values --------------------
@@ -192,6 +203,7 @@ void matrixMultiplication(string inFileName,
                         // Accumulator[k]
                         //      << endl
                         //      << endl;
+
                        
 
                     }
@@ -217,7 +229,12 @@ void matrixMultiplication(string inFileName,
                     mat_result.append(to_string(Shift_Adder[k])+"\t");
                     break;
                 case 1:
-                    outresult = Shift_Adder[k] - negative_count[k]*(pow(2, weight_precision)-1); 
+                    // outresult = Shift_Adder[k] - negative_count[k]*(pow(2, weight_precision)-1); 
+                    outresult = Shift_Adder[k];
+                    for (int i = 0; i<kernelSize; ++i){
+                        outresult-=inputData[i]*negative_count[k][i]*(pow(2, weight_precision)-1); 
+
+                    }
                     if (outresult < 0)
                         // outfile << 0 << "\t";
                         mat_result.append(to_string(0)+"\t");
@@ -227,10 +244,15 @@ void matrixMultiplication(string inFileName,
 
                     break;
                 default: 
-                    // cout << "# of negative values in " << k << "'s weight: " << negative_count[k] << endl;
-                    // cout << Shift_Adder[k] << endl;
-                    // cout << Shift_Adder[k] - negative_count[k]*((pow(2, weight_precision)-1) + 1) << endl;
-                    outresult = Shift_Adder[k] - negative_count[k]*((pow(2, weight_precision)-1) + 1); 
+                    outresult = Shift_Adder[k];
+                    // cout << "result: " << outresult << endl;
+
+                    for (int i = 0; i<kernelSize; ++i){
+                        outresult-=inputData[i]*negative_count[k][i]*((pow(2, weight_precision)-1) + 1); 
+
+                    }
+                    // cout << "neg result: " << outresult << endl;
+                    // outresult = Shift_Adder[k] - negative_count[k]*((pow(2, weight_precision)-1) + 1); 
                     if (relu_on && outresult < 0)
                         // outfile << 0 << "\t";
                         mat_result.append(to_string(0)+"\t");
@@ -247,7 +269,7 @@ void matrixMultiplication(string inFileName,
         // outfile << endl;
        // mat_result.append("\n");
 
-    }
+    // }
 
     delete[] Accumulator;
     delete[] Shift_Adder;
@@ -255,6 +277,7 @@ void matrixMultiplication(string inFileName,
 
 DONE:
     cout << "ADC power: " << result->getPower() << "E-05 (W)" << endl;
+    ADC_power = result->getPower();
     cout << "Done doing matrix multiplication of the input feature map" << endl;
 }
 

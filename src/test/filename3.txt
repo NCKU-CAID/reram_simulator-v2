@@ -1,0 +1,9 @@
+./test/input2/input11.txt ./test/weight3/weight11.txt
+./test/input2/input12.txt  0
+./test/input2/input13.txt  0
+./test/input2/input14.txt  0
+./test/input2/input15.txt  0
+./test/input2/input16.txt  0
+./test/input2/input17.txt  0
+./test/input2/input18.txt  0
+./test/input2/input19.txt  0
