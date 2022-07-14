@@ -163,11 +163,15 @@ void Tile::programWeights(string inFileName,
         kernelSize = size_h;
     }
 
+    initializeCell(size_w, size_h, cellArray[0][0].getCellType(), cellArray[0][0].getCellPrecision());
+
+
     int weight;
     int cellValue;
     int kernelCount = 1;
     int weightCount = 0;
-    for (int rowset = 0; rowset < maxNumKernelPerColumn; ++rowset) {
+    // for (int rowset = 0; rowset < maxNumKernelPerColumn; ++rowset) {
+    int rowset = 0;
         if (size_h - rowset * kernelSize <
             kernelSize) {  // check if the remaining rows can
                            // accomodate the next kernel
@@ -201,7 +205,7 @@ void Tile::programWeights(string inFileName,
                 weightCount++;
             }
         }
-    }
+    // }
 
 DONE:
     cout << "Done mapping all the weights" << endl;

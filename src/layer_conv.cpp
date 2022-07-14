@@ -27,12 +27,17 @@ void convolution( Tile &tile,
                   int signed_weight,
                   int relu_on,
                   float ADC_voltage,
+                  float &ADC_total_power,
                   string resultFileName)
 {
     int kernelSize = kernel_w*kernel_h*kernel_c;
     int NumOutKernel_w = (input_w-kernel_w)/stride+1;
     int NumOutKernel_h = (input_h-kernel_h)/stride+1;
     int outSize = NumOutKernel_h*NumOutKernel_w;
+
+    int CellPrecision = tile.getCellPrecision(0, 0);
+    int NumCellPerWeight = ceil(weight_precision / CellPrecision);
+    int maxNumWeightPerRow = int(floor(tile.getTileWidth() / NumCellPerWeight));
     // NumOutKernel_w*NumOutKernel_h files
 
     ifstream infile(FileNamesFile);
@@ -40,6 +45,10 @@ void convolution( Tile &tile,
         cerr << "Failed opening file: " << FileNamesFile << endl;
         exit(1);
     }
+
+    ADC_total_power =  0;
+    float ADC_temp_power = 0;
+
     string inputFile, weightFile;
 
     int input_count = 0;
@@ -55,11 +64,11 @@ void convolution( Tile &tile,
         // cout << "filter_count: " << filter_count << endl;
         // cout << "filter_num: " << filter_num << endl;
         // cout << "action: "<< action << endl;
-
-        // if (weightFile == to_string(0))
-        //     cout << "input: "<< inputFile << "\t" << "weight: unchanged" << endl;
-        // else
-        //     cout << "input: "<< inputFile << "\t" << "weight: " << weightFile << endl;
+        cout << "_______________________________________________________________________________"<< endl;
+        if (weightFile == to_string(0))
+            cout << endl<<"input: "<< inputFile << "\t" << "weight: unchanged" << endl;
+        else
+            cout << endl<<"input: "<< inputFile << "\t" << "weight: " << weightFile << endl;
         if(weightFile != to_string(0))
         {
             cout << "---------------------Start Programming Weights-----------------------" << endl;
@@ -71,7 +80,10 @@ void convolution( Tile &tile,
 
         string mat_result="";
        
-        matrixMultiplication(inputFile, input_precision, tile, kernel_w,kernel_h, kernel_c, weight_precision, signed_weight, mat_result, ADC_voltage, relu_on);
+        matrixMultiplication(inputFile, input_precision, tile, kernel_w,kernel_h, kernel_c, weight_precision, signed_weight, mat_result, ADC_voltage, ADC_temp_power, relu_on, kernel_num);
+        // cout << "ADC_temp_power = " << ADC_temp_power << endl;
+        ADC_total_power+=ADC_temp_power;
+        // cout << "ADC_total_power = " << ADC_total_power << endl;
 
         string outFileName = to_string(input_count) + ".txt";
         string outName = "./output/" + outFileName;
@@ -90,7 +102,7 @@ void convolution( Tile &tile,
             // cout << weightFile << endl;
             // outfile << weightFile << '\t';
 
-            // cout << "matrix result: " << mat_result << endl;
+            cout << "matrix result: " << mat_result << endl;
             outfile <<mat_result << '\t';
         }
         else if (action == "append"){
@@ -103,7 +115,7 @@ void convolution( Tile &tile,
             // cout << weightFile << endl;
 
             outfile << mat_result << '\t';
-            // cout << "matrix result: " << mat_result << endl;
+            cout << "matrix result: " << mat_result << endl;
             
         }
         else{
@@ -112,45 +124,71 @@ void convolution( Tile &tile,
                 cerr << "Failed opening file: " << outName << endl;
                 exit(1);
             }
-            string tempstring;
+            string filestring, tempstring;
             int tempcount = 0;
-            string writestring;
+            string writestring, accumstring;
+            string templine;
 
-            while(file>>tempstring){
-                    ++tempcount;
-                    istringstream iss(mat_result);
-                    iss >> writestring; 
-                    // cout << tempcount << ": old value " << tempstring << " + accumulated value " << writestring;
-                    writestring = to_string(stoi(tempstring)+stoi(writestring));
-                    // cout << " = " << writestring << endl;
-                    if(tempcount == filter_num){
-                        
-                        int diff = abs(int(tempstring.length())-int(writestring.length()));
-                        if(tempstring.length()>=writestring.length())
-                        {
-                            file.seekg(-tempstring.length(), ios_base::cur);    
-                            file<<writestring;
-                            for (int i = 0; i<diff;++i)
-                                file.put(' ');
-                            file.seekg(tempstring.length(), ios_base::cur);  
-                        }
-                        else
-                        {
 
-                            int ptrpos_cur = file.tellg();
-                            // cout << "ptr: " << ptrpos_cur << endl;
-                            string linestring;
-                            getline(file,linestring);
-                            // ccout << "line: " << linestring << endl;
-                            int ptrpos = ptrpos_cur-tempstring.length();
-                            file.seekg(ptrpos, ios_base::beg); 
-                            file<<writestring<<'\t'<<linestring<<'\t';
-                            file.seekg(ptrpos+writestring.length(), ios_base::beg);  
-                        }
-                        
-                       
-                        break;
+            getline(file, templine);
+            file.seekg(0, ios_base::beg);    
+            cout << "matrix result: " << mat_result << endl;
+            istringstream iss(mat_result);
+            istringstream isf(templine);
+
+            
+            tempcount = 0;
+            while(tempcount<kernel_num){
+                ++tempcount;
+                
+                isf >> filestring;
+                iss >> accumstring; 
+                // cout << "tempcount: " << tempcount << ", filter_num: " << filter_num << ", maxNumWeightPerRow+filter_num: "<< maxNumWeightPerRow+filter_num << endl;
+                file>>tempstring;
+                if(tempcount >= filter_num && tempcount < maxNumWeightPerRow+filter_num){
+                    cout << tempcount << ": old value " << filestring << " + accumulated value " << accumstring;
+                    writestring = to_string(stoi(filestring)+stoi(accumstring));
+                    cout << " = " << writestring << endl;
+                    
+                    // cout << "tempstring: "<< tempstring << endl;
+                    if(file.eof()){
+                        file.seekg(1,ios_base::end);
                     }
+                     // cout << "ptr0: " << file.tellg() << endl;
+
+                    int diff = abs(int(filestring.length())-int(writestring.length()));
+                    if(filestring.length()>=writestring.length())
+                    {
+                        file.seekg(-filestring.length(), ios_base::cur); 
+                        // cout << "ptr1: " << file.tellg() << endl;
+
+                        file<<writestring;
+                        // cout << "ptr1_2: " << file.tellg() << endl;
+
+                        for (int i = 0; i<diff;++i)
+                            file.put(' ');
+                        // file.seekg(filestring.length(), ios_base::cur); 
+
+                    }
+                    else
+                    {
+                        int ptrpos_cur = file.tellg();
+                        string linestring;
+                        getline(file,linestring);
+                        // ccout << "line: " << linestring << endl;
+                        int ptrpos = ptrpos_cur-filestring.length();
+                        file.seekg(ptrpos, ios_base::beg); 
+                        cout << "ptr2: " << file.tellg() << endl;
+
+
+                        file<<writestring<<'\t'<<linestring<<'\t';
+                        file.seekg(ptrpos+writestring.length(), ios_base::beg);  
+                    }
+                    
+                
+                    // break;
+                }
+
             }
 
 
@@ -161,11 +199,19 @@ void convolution( Tile &tile,
 
         if (input_count>=outSize)
         {   
-            ++filter_count;
             action = "append";
+            if(maxNumWeightPerRow>=kernel_num)
+            {
+                filter_count = kernel_num;
+            }
+            else
+            {
+                 filter_count = filter_count + maxNumWeightPerRow;
+            }
             if (filter_count < kernel_num){
                 input_count = 0;
             }
+
         }
         if (filter_count >= kernel_num)
         {
@@ -175,7 +221,7 @@ void convolution( Tile &tile,
                 input_count = 0;
             }
             if(filter_num>kernel_num){
-                filter_num = 0;
+                filter_num = 1;
 
             }
             
