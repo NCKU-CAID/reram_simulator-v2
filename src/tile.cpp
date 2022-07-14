@@ -271,7 +271,7 @@ void Tile::printFloorPlan(string name, int option)
     }
 
     if (cellArray[0][0].getCellType() == 0)
-        outfile << "Cell Type = SRAM" << endl;
+        outfile << "Cell Type = SRAM (specially-designed SRAM)" << endl;
     else
         outfile << "Cell Type = RRAM" << endl;
 
@@ -320,7 +320,7 @@ float Tile::getCellPartialSum(int row, int col)
     return cellArray[row][col].getPartialSum();
 }
 
-float Tile::getPower(int input, float VGG) 
+float Tile::getPower(int input, float VGG, int bitNum) 
 {
     int col;
     if(input == 0)
@@ -330,22 +330,39 @@ float Tile::getPower(int input, float VGG)
 
     // cout << "VGG: " << VGG << endl;
     // cout << "input: "<<input << ", power: " ;
+    if(bitNum == 6 && col>7){
+        cout << "no corresponding power table for " << col+1 << " bits input" << endl;
+        return -1;
+    }
+    else if(bitNum == 7 && col>8){
+        cout << "no corresponding power table for " << col+1 << " bits input" << endl;
+        return -1;
+    }
 
 
     if (VGG == 0.9f)
     {
         // cout << powerTable6[0][col] << "E-05" << endl;
-        return powerTable6[0][col];
+        if(bitNum == 6)
+            return powerTable6[0][col];
+        else
+            return powerTable7[0][col];
     }
     else if (VGG == 0.8f)
     {
         // cout << powerTable6[1][col] << "E-05" << endl;
-        return powerTable6[1][col];
+        if(bitNum == 6)
+            return powerTable6[1][col];
+        else
+            return powerTable7[1][col];
     }
     else if (VGG == 0.7f)
     {
         // cout << powerTable6[2][col] << "E-05" << endl;
-        return powerTable6[2][col];
+        if(bitNum == 6)
+            return powerTable6[2][col];
+        else
+            return powerTable7[2][col];
     }
     else
     {

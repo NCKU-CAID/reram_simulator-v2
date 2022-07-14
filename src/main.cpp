@@ -148,9 +148,10 @@ int main(int argc, char const *argv[])
     Tile tile(tileWidth, tileHeight, cellType, cellPrecision);
     // tile.programWeights(weightFileName, kernelWidth, kernelHeight,kernelChannel, weightPrecision);
 	// cout << "---------------------Programming Weights Finish----------------------" << endl;
+            
 	Tile &tileref = tile;
 	float ADC_power = 0;
-    // matrixMultiplication(inputFileName, inputPrecision, tileref, kernelWidth,kernelHeight, kernelChannel, weightPrecision, weightSign, outputFileName, ADCVoltage, relu_on);
+    // matrixMultiplication(inpuFileName, inputPrecision, tileref, kernelWidth,kernelHeight, kernelChannel, weightPrecision, weightSign, mat_result, ADCVoltage, ADC_power,relu_on, kernelNum);
     convolution(tileref, FileName, inputWidth, inputHeight, inputPrecision, kernelWidth,kernelHeight, kernelChannel, kernelNum, weightPrecision, stride, weightSign, relu_on, ADCVoltage, ADC_power, "ExampleLayer");
     cout << "_____________________________________END LAYER CONVOLUTION__________________________________________"<< endl;
     cout << "ADC total power = " << ADC_power << "E-05 (W)"<< endl;

@@ -8,6 +8,13 @@
 #include "result.h"
 
 using namespace std;
+#ifndef SRAM
+#define SRAM               0
+#endif
+
+#ifndef RRAM
+#define RRAM                1
+#endif
 
 int separateInputBits(int value, int CellPrecision, int input_prec);
 void initialize(int *array, int size);
@@ -77,7 +84,6 @@ void matrixMultiplication(string inFileName,
 
     Result *result = new Result();
     result->setPower(0);
-    float tempOut = 0;
 
     // for (int inputSet = 0; inputSet < maxNumKernelPerColumn; ++inputSet) { 
     // remove this part (the sparse usage of rram cells) temporarily til we think of new mapping method
@@ -104,10 +110,8 @@ void matrixMultiplication(string inFileName,
             tile.setRowVoltage(i, 0);
         }
 
-
-
-        cout << " ______________ INPUT SET " << inputSet << " _____________"
-             << endl;
+        // cout << " ______________ INPUT SET " << inputSet << " _____________"
+        //      << endl;
 
         // cout << "enableRow: " << inputSet*kernelSize << " to " <<
         // (inputSet+1)*kernelSize-1 << endl;
@@ -151,75 +155,194 @@ void matrixMultiplication(string inFileName,
         //--------------------------- calculate # of negative values --------------------
 
 
-        for (int i_prec = input_precision - 1; i_prec >= 0;
-             --i_prec)  // for the <first> bit of input
+        if(tile.getCellType(0,0) == SRAM) // need to make sure the structure again
         {
-            initialize(Accumulator, maxNumWeightPerRow);
-            cout << "--------- input bit " << i_prec << " ------------" << endl;
-
-            for (int k = 0; k < maxNumWeightPerRow;
-                 ++k)  // for the <first> set of kernel in the kth (weight
-                       // precision) columns
+            for (int i_prec = input_precision - 1; i_prec > 0;
+                 i_prec = i_prec - 2)  // for the <first> bit of input
             {
-                Shift_Adder[k] = Shift_Adder[k] << 1;
-                cout << "Shift partial sum for input bit " << k << ": "
-                << Shift_Adder[k] << endl;
+                initialize(Accumulator, maxNumWeightPerRow);
+                cout << "--------- input bit " << i_prec << " ------------" << endl;
 
-                cout << "----- Kernel " << k << "-----" << endl;
-                for (int cell = NumCellPerWeight - 1; cell >= 0;
-                     --cell)  // for the <first> bit of weight
+                for (int k = 0; k < maxNumWeightPerRow;
+                     ++k)  // for the <first> set of kernel in the kth (weight
+                           // precision) columns
                 {
-                    // cout << "< cell " << cell << " >" << endl;
-                    Accumulator[k] = Accumulator[k] << CellPrecision;
-                    // cout << "Shift partial sum " << k << ": " <<
-                    // Accumulator[k]
-                    //      << endl;
-                    tempOut = 0;
+                    Shift_Adder[k] = Shift_Adder[k] << 2;
+                    cout << "Shift partial sum for input bit " << k << ": "
+                    << Shift_Adder[k] << endl;
 
-                    for (int i = 0; i < kernelSize;
-                         ++i)  // for the <first> input for the <first> kernel
-                               // element
+                    cout << "----- Kernel " << k << "-----" << endl;
+
+                    int *BLR = new int[NumCellPerWeight];
+                    int *BLL = new int[NumCellPerWeight];
+                    initialize(BLR, NumCellPerWeight);
+                    initialize(BLL, NumCellPerWeight);
+
+                    for (int cell = NumCellPerWeight - 1; cell >= 0;
+                         --cell)  // for the <first> bit of weight
                     {
+                        // cout << "< cell " << cell << " >" << endl;
+
+                        for (int i = 0; i < kernelSize;
+                             ++i)  // for the <first> input for the <first> kernel
+                                   // element
+                        {
+                            
+                            // cout << " - Input " << inputData[i];
+                            int inputBit = separateInputBits(inputData[i], i_prec,
+                                                             input_precision);
+                            // cout << "\t bit " << i_prec << " = " << inputBit
+                            // << endl;
+                            tile.setRowVoltage(i + inputSet * kernelSize, inputBit);
+
+                            // cout << " - Weight ["<< i + inputSet * kernelSize <<"]["<<cell+k*NumCellPerWeight<<"]: "
+                            //      << tile.getCellValue(i + inputSet * kernelSize,
+                            //                           cell + k *
+                            //                           NumCellPerWeight)
+                            //      << endl;
+
+                            BLR[cell] += tile.getCellPartialSum(i + inputSet * kernelSize,
+                                                       cell + k * NumCellPerWeight); 
+                           
+                                                        
+                            //  cout << " - cellR [" <<cell<<"]: " <<
+                            // BLR[cell] << endl
+                            //      << endl;
+
+                            // cout << " - Input " << inputData[i];
+                            inputBit = separateInputBits(inputData[i], i_prec-1,
+                                                             input_precision);
+                            // cout << "\t bit " << i_prec-1 << " = " << inputBit << endl;
+                            
+                            tile.setRowVoltage(i + inputSet * kernelSize, inputBit);
+                             // cout << " - Weight ["<< i + inputSet * kernelSize <<"]["<<cell+k*NumCellPerWeight<<"]: "
+                             //     << tile.getCellValue(i + inputSet * kernelSize,
+                             //                          cell + k *
+                             //                          NumCellPerWeight)
+                             //     << endl;
+                           
+                            BLL[cell] += tile.getCellPartialSum(i + inputSet * kernelSize,
+                                                       cell + k * NumCellPerWeight); 
+                            
+                            // cout << " - cellL [" <<cell << "]: " <<
+                            // BLL[cell]
+                            //      << endl << endl;
+
+                        }
                         
-                        // cout << " - Input " << inputData[i];
-                        int inputBit = separateInputBits(inputData[i], i_prec,
-                                                         input_precision);
-                        // cout << "\t bit " << i_prec << " = " << inputBit
-                        // << endl;
-                        tile.setRowVoltage(i + inputSet * kernelSize, inputBit);
 
-                        // cout << " - Weight: "
-                        //      << tile.getCellValue(i + inputSet * kernelSize,
-                        //                           cell + k *
-                        //                           NumCellPerWeight)
-                        //      << endl;
+                    }    
+                    for (int BL = NumCellPerWeight; BL >=0;--BL)
+                    {
+                        Accumulator[k] = Accumulator[k] << 1;
 
-                        float partialSUm = tile.getCellPartialSum(i + inputSet * kernelSize,
-                                                   cell + k * NumCellPerWeight); 
-                        Accumulator[k] += partialSUm;
-                        tempOut += partialSUm;
-                                                    
-                        // cout << " - partial sum " << k << ": " <<
-                        // Accumulator[k]
-                        //      << endl
-                        //      << endl;
-
-                       
-
-                    }
-                    result->storePower(tile.getPower(tempOut, ADC_voltage));
-                }                
-                Shift_Adder[k] += Accumulator[k];
-                cout << "S&H " << k << ": " << Shift_Adder[k] << endl;
+                        if (BL == NumCellPerWeight){
+                            result->storePower(tile.getPower(BLR[BL-1], ADC_voltage, 6));
+                            Accumulator[k]+=BLR[BL-1];
+                        }
+                        else if (BL == 0){
+                            result->storePower(tile.getPower(BLL[BL], ADC_voltage, 6));
+                            Accumulator[k]+=BLL[BL];
+                        }
+                        else{
+                            result->storePower(tile.getPower(BLR[BL-1]+BLL[BL], ADC_voltage, 7));
+                            Accumulator[k]+=BLR[BL-1]+BLL[BL];
+                        }
 
 
+                    }   
+                            
+                    Shift_Adder[k] += Accumulator[k];
+                    cout << "S&H " << k << ": " << Shift_Adder[k] << endl;
+
+                    delete[] BLL;
+                    delete[] BLR;
+
+
+                }
+               
+                tile.printFloorPlan("InputFloorPlan", 2);
             }
-           
-            tile.printFloorPlan("InputFloorPlan", 2);
+
         }
+        else
+        {
+
+            int tempOut = 0;
+            for (int i_prec = input_precision - 1; i_prec >= 0;
+                 --i_prec)  // for the <first> bit of input
+            {
+                initialize(Accumulator, maxNumWeightPerRow);
+                cout << "--------- input bit " << i_prec << " ------------" << endl;
+
+                for (int k = 0; k < maxNumWeightPerRow;
+                     ++k)  // for the <first> set of kernel in the kth (weight
+                           // precision) columns
+                {
+                    Shift_Adder[k] = Shift_Adder[k] << 1;
+                    cout << "Shift partial sum for input bit " << k << ": "
+                    << Shift_Adder[k] << endl;
+
+                    cout << "----- Kernel " << k << "-----" << endl;
+                    for (int cell = NumCellPerWeight - 1; cell >= 0;
+                         --cell)  // for the <first> bit of weight
+                    {
+                        // cout << "< cell " << cell << " >" << endl;
+                        Accumulator[k] = Accumulator[k] << CellPrecision;
+                        // cout << "Shift partial sum " << k << ": " <<
+                        // Accumulator[k]
+                        //      << endl;
+                        tempOut = 0;
+
+                        for (int i = 0; i < kernelSize;
+                             ++i)  // for the <first> input for the <first> kernel
+                                   // element
+                        {
+                            
+                            // cout << " - Input " << inputData[i];
+                            int inputBit = separateInputBits(inputData[i], i_prec,
+                                                             input_precision);
+                            // cout << "\t bit " << i_prec << " = " << inputBit
+                            // << endl;
+                            tile.setRowVoltage(i + inputSet * kernelSize, inputBit);
+
+                            // cout << " - Weight ["<<i + inputSet * kernelSize<<"]["<<cell + k *
+                            //                           NumCellPerWeight<<"]: "
+                            //      << tile.getCellValue(i + inputSet * kernelSize,
+                            //                           cell + k *
+                            //                           NumCellPerWeight)
+                            //      << endl;
+
+                            float partialSUm = tile.getCellPartialSum(i + inputSet * kernelSize,
+                                                       cell + k * NumCellPerWeight); 
+                            Accumulator[k] += partialSUm;
+                            tempOut += partialSUm;
+                                                        
+                            // cout << " - partial sum " << k << ": " <<
+                            // Accumulator[k]
+                            //      << endl
+                            //      << endl;
+
+                           
+
+                        }
+                        result->storePower(tile.getPower(tempOut, ADC_voltage, 6));
+                    }                
+                    Shift_Adder[k] += Accumulator[k];
+                    cout << "S&H " << k << ": " << Shift_Adder[k] << endl;
+
+
+                }
+               
+                tile.printFloorPlan("InputFloorPlan", 2);
+            }
+        }
+               
+
 
 
         int outresult = 0;
+
 
         for (int k = 0; k < maxNumWeightPerRow; ++k) {
             switch(signed_weight)
@@ -245,13 +368,13 @@ void matrixMultiplication(string inFileName,
                     break;
                 default: 
                     outresult = Shift_Adder[k];
-                    // cout << "result: " << outresult << endl;
+                    cout << "result: " << outresult << endl;
 
                     for (int i = 0; i<kernelSize; ++i){
                         outresult-=inputData[i]*negative_count[k][i]*((pow(2, weight_precision)-1) + 1); 
 
                     }
-                    // cout << "neg result: " << outresult << endl;
+                    cout << "neg result: " << outresult << endl;
                     // outresult = Shift_Adder[k] - negative_count[k]*((pow(2, weight_precision)-1) + 1); 
                     if (relu_on && outresult < 0)
                         // outfile << 0 << "\t";
@@ -270,9 +393,17 @@ void matrixMultiplication(string inFileName,
        // mat_result.append("\n");
 
     // }
+    // remove this part (the sparse usage of rram cells) temporarily til we think of new mapping method
 
     delete[] Accumulator;
     delete[] Shift_Adder;
+
+    delete[] inputData;
+    for (int i = 0; i < maxNumWeightPerRow; ++i) {
+        delete[] negative_count[i];
+    }
+    delete[] negative_count;
+
 
 
 DONE:
@@ -293,7 +424,8 @@ int separateInputBits(int value, int bit, int input_prec)
         exit(1);
     }
 
-    int mask = 1;
+    int mask;
+    mask = 1; 
     return (value >> bit) & mask;
 }
 
