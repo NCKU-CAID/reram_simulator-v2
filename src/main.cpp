@@ -5,6 +5,9 @@
 #include "layer_conv.cpp"
 #include "tile.h"
 #include <boost/program_options.hpp>
+#include <experimental/filesystem>
+
+
 using namespace std;
 namespace BPO = boost::program_options;
 #ifndef FALSE
@@ -157,6 +160,26 @@ int main(int argc, char const *argv[])
     convolution(tileref, FileName, inputWidth, inputHeight, inputPrecision, kernelWidth,kernelHeight, kernelChannel, kernelNum, weightPrecision, stride, padding, weightSign, relu_on, ADCVoltage, ADC_power, "ExampleLayer");
     cout << "_____________________________________END LAYER CONVOLUTION__________________________________________"<< endl;
     cout << "ADC total power = " << ADC_power << "E-05 (W)"<< endl;
+
+    string outFileName = "ADC_power.txt";
+    string outName;
+    if (cellType)
+    	outName = "./output/RRAM_" + outFileName;
+    else
+    	outName = "./output/SRAM_" + outFileName;
+
+    if (!experimental::filesystem::is_directory("output") ||
+        !experimental::filesystem::exists(
+            "output")) {  // Check if src folder exists
+        experimental::filesystem::create_directory(
+            "output");  // create src folder
+    }
+    ofstream outfile(outName, ios::out);
+    if (!outfile) {
+        cerr << "Failed opening file: " << outName << endl;
+        exit(1);
+    }
+    outfile <<   ADC_power << "E-05 (W)" << endl;
     
 
     return 0;
