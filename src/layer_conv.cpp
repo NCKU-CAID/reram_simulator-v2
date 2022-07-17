@@ -24,6 +24,7 @@ void convolution( Tile &tile,
                   int kernel_num,
                   int weight_precision,
                   int stride,
+                  int padding,
                   int signed_weight,
                   int relu_on,
                   float ADC_voltage,
@@ -31,8 +32,19 @@ void convolution( Tile &tile,
                   string resultFileName)
 {
     int kernelSize = kernel_w*kernel_h*kernel_c;
-    int NumOutKernel_w = (input_w-kernel_w)/stride+1;
-    int NumOutKernel_h = (input_h-kernel_h)/stride+1;
+    int NumOutKernel_w;
+    int NumOutKernel_h;
+    if (padding)
+    {
+        NumOutKernel_w = (input_w-kernel_w+2)/stride+1;
+        NumOutKernel_h = (input_h-kernel_h+2)/stride+1;
+    }
+    else
+    {
+        NumOutKernel_w = (input_w-kernel_w)/stride+1;
+        NumOutKernel_h = (input_h-kernel_h)/stride+1;
+   
+    }
     int outSize = NumOutKernel_h*NumOutKernel_w;
 
     int CellPrecision = tile.getCellPrecision(0, 0);

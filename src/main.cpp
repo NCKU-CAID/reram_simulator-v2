@@ -5,6 +5,9 @@
 #include "layer_conv.cpp"
 #include "tile.h"
 #include <boost/program_options.hpp>
+#include <experimental/filesystem>
+
+
 using namespace std;
 namespace BPO = boost::program_options;
 #ifndef FALSE
@@ -43,7 +46,7 @@ int main(int argc, char const *argv[])
 {
 	int tileWidth,tileHeight,cellType,cellPrecision,kernelWidth,kernelHeight,kernelChannel, kernelNum, weightPrecision, inputPrecision, weightSign;
 	int inputWidth, inputHeight;
-	int stride, relu_on;
+	int stride, relu_on, padding;
 	string weightFileName,inputFileName, outputFileName;
 	string ADC_V;
 	string FileName;
@@ -69,6 +72,8 @@ int main(int argc, char const *argv[])
 							  ("input_precision,inp",BPO::value<int>(&inputPrecision)->default_value(8)->value_name("1~8"),"The precision of a input feature, default is 「8」")
 							  ("stride,s",BPO::value<int>(&stride)->default_value(1)->value_name("integer"),"The stride of the sliding window in convolution, default is 「1」")
 							  // ("output_file,ofile",BPO::value<string>(&outputFileName)->required(),"Output file name")
+							  ("padding, p",BPO::value<int>(&padding)->default_value(0)->value_name("0 or 1"),"If the convolution includes zero padding or not")
+							 
 							  ("files_list,file",BPO::value<string>(&FileName)->required(),"File that includes the list of input file and weight file")
 							  ("ReLU",BPO::value<int>(&relu_on)->default_value(1),"1 to activate ReLU function, 0 to deactivate ReLU function")
 							  ("ADC_voltage,vADC",BPO::value<string>(&ADC_V)->default_value("0.9")->value_name("0.7, 0.8 or 0.9"),"The voltage for ADC, default is 「0.9」");
@@ -148,12 +153,33 @@ int main(int argc, char const *argv[])
     Tile tile(tileWidth, tileHeight, cellType, cellPrecision);
     // tile.programWeights(weightFileName, kernelWidth, kernelHeight,kernelChannel, weightPrecision);
 	// cout << "---------------------Programming Weights Finish----------------------" << endl;
+            
 	Tile &tileref = tile;
 	float ADC_power = 0;
-    // matrixMultiplication(inputFileName, inputPrecision, tileref, kernelWidth,kernelHeight, kernelChannel, weightPrecision, weightSign, outputFileName, ADCVoltage, relu_on);
-    convolution(tileref, FileName, inputWidth, inputHeight, inputPrecision, kernelWidth,kernelHeight, kernelChannel, kernelNum, weightPrecision, stride, weightSign, relu_on, ADCVoltage, ADC_power, "ExampleLayer");
+    // matrixMultiplication(inpuFileName, inputPrecision, tileref, kernelWidth,kernelHeight, kernelChannel, weightPrecision, weightSign, mat_result, ADCVoltage, ADC_power,relu_on, kernelNum);
+    convolution(tileref, FileName, inputWidth, inputHeight, inputPrecision, kernelWidth,kernelHeight, kernelChannel, kernelNum, weightPrecision, stride, padding, weightSign, relu_on, ADCVoltage, ADC_power, "ExampleLayer");
     cout << "_____________________________________END LAYER CONVOLUTION__________________________________________"<< endl;
     cout << "ADC total power = " << ADC_power << "E-05 (W)"<< endl;
+
+    string outFileName = "ADC_power.txt";
+    string outName;
+    if (cellType)
+    	outName = "./output/RRAM_" + outFileName;
+    else
+    	outName = "./output/SRAM_" + outFileName;
+
+    if (!experimental::filesystem::is_directory("output") ||
+        !experimental::filesystem::exists(
+            "output")) {  // Check if src folder exists
+        experimental::filesystem::create_directory(
+            "output");  // create src folder
+    }
+    ofstream outfile(outName, ios::out);
+    if (!outfile) {
+        cerr << "Failed opening file: " << outName << endl;
+        exit(1);
+    }
+    outfile <<   ADC_power << "E-05 (W)" << endl;
     
 
     return 0;

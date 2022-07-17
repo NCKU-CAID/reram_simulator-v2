@@ -3,6 +3,7 @@
 #include <experimental/filesystem>
 #include <fstream>
 #include <iostream>
+#include <iomanip>
 #include "cell.h"
 #include "param.h"
 
@@ -166,6 +167,7 @@ void Tile::programWeights(string inFileName,
     initializeCell(size_w, size_h, cellArray[0][0].getCellType(), cellArray[0][0].getCellPrecision());
 
 
+    float fweight;
     int weight;
     int cellValue;
     int kernelCount = 1;
@@ -185,7 +187,8 @@ void Tile::programWeights(string inFileName,
                          << " kernel(s)" << endl;
                     kernelCount++;
                 }
-                inFile >> weight;
+                inFile >> fweight;
+                weight = int(fweight);
                 // cout << endl
                 //      << "[" << row << "][" << col << "]: Weight " <<
                 //      weightCount
@@ -209,7 +212,7 @@ void Tile::programWeights(string inFileName,
 
 DONE:
     cout << "Done mapping all the weights" << endl;
-    printFloorPlan("WeightFloorPlan", 0);
+    printFloorPlan("WeightFloorPlan.txt", 0);
     originalWeight(NumCellPerWeight, maxNumWeightPerRow, weight_precision);
 }
 
@@ -224,30 +227,30 @@ int separateBits(int value, int CellPrecision)
 
 void Tile::originalWeight(int NumCellPerWeight, int maxNumWeightPerRow, int weightPrecision, int sign)
 {
-    ofstream outfile("./FloorPlan/originalWeight", ios::out);
+    ofstream outfile("./FloorPlan/originalWeight.txt", ios::out);
     if (!outfile) {
         cerr << "Failed opening file" << endl;
         exit(1);
     }
-    outfile << " \t";
+    outfile << setw(10)  ;
     for (int j = 0; j < maxNumWeightPerRow; ++j) {
-        outfile << j << "\t";
+        outfile << j << setw(5);
     }
     outfile << endl;
 
 
 
     for (int i = 0; i < size_h; ++i) {
-        outfile << i << "\t";
+        outfile << i << setw(5);
         for (int j = 0; j < size_w; j = j + NumCellPerWeight) {
             int weight = 0;
             for (int cnt = 0; cnt < NumCellPerWeight; ++cnt) {
                 weight += (cellArray[i][cnt + j].getValue() << cnt);
                 if (cnt == NumCellPerWeight - 1) {
                     if (sign && weight > (pow(2,weightPrecision)/2 -1))
-                        outfile << weight - pow(2,weightPrecision) << "\t";
+                        outfile << weight - pow(2,weightPrecision) << setw(5) ;
                     else
-                        outfile << weight << "\t";
+                        outfile << weight << setw(5);
                 }
             }
         }
@@ -271,7 +274,7 @@ void Tile::printFloorPlan(string name, int option)
     }
 
     if (cellArray[0][0].getCellType() == 0)
-        outfile << "Cell Type = SRAM" << endl;
+        outfile << "Cell Type = SRAM (specially-designed SRAM)" << endl;
     else
         outfile << "Cell Type = RRAM" << endl;
 
@@ -320,7 +323,7 @@ float Tile::getCellPartialSum(int row, int col)
     return cellArray[row][col].getPartialSum();
 }
 
-float Tile::getPower(int input, float VGG) 
+float Tile::getPower(int input, float VGG, int bitNum) 
 {
     int col;
     if(input == 0)
@@ -330,22 +333,39 @@ float Tile::getPower(int input, float VGG)
 
     // cout << "VGG: " << VGG << endl;
     // cout << "input: "<<input << ", power: " ;
+    if(bitNum == 6 && col>7){
+        cout << "no corresponding power table for " << col+1 << " bits input" << endl;
+        return -1;
+    }
+    else if(bitNum == 7 && col>8){
+        cout << "no corresponding power table for " << col+1 << " bits input" << endl;
+        return -1;
+    }
 
 
     if (VGG == 0.9f)
     {
         // cout << powerTable6[0][col] << "E-05" << endl;
-        return powerTable6[0][col];
+        if(bitNum == 6)
+            return powerTable6[0][col];
+        else
+            return powerTable7[0][col];
     }
     else if (VGG == 0.8f)
     {
         // cout << powerTable6[1][col] << "E-05" << endl;
-        return powerTable6[1][col];
+        if(bitNum == 6)
+            return powerTable6[1][col];
+        else
+            return powerTable7[1][col];
     }
     else if (VGG == 0.7f)
     {
         // cout << powerTable6[2][col] << "E-05" << endl;
-        return powerTable6[2][col];
+        if(bitNum == 6)
+            return powerTable6[2][col];
+        else
+            return powerTable7[2][col];
     }
     else
     {
