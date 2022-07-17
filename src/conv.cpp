@@ -368,13 +368,13 @@ void matrixMultiplication(string inFileName,
                     break;
                 default: 
                     outresult = Shift_Adder[k];
-                    cout << "result: " << outresult << endl;
+                    // cout << "result: " << outresult << endl;
 
                     for (int i = 0; i<kernelSize; ++i){
                         outresult-=inputData[i]*negative_count[k][i]*((pow(2, weight_precision)-1) + 1); 
 
                     }
-                    cout << "neg result: " << outresult << endl;
+                    // cout << "neg result: " << outresult << endl;
                     // outresult = Shift_Adder[k] - negative_count[k]*((pow(2, weight_precision)-1) + 1); 
                     if (relu_on && outresult < 0)
                         // outfile << 0 << "\t";

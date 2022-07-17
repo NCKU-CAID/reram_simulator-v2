@@ -3,6 +3,7 @@
 #include <experimental/filesystem>
 #include <fstream>
 #include <iostream>
+#include <iomanip>
 #include "cell.h"
 #include "param.h"
 
@@ -166,6 +167,7 @@ void Tile::programWeights(string inFileName,
     initializeCell(size_w, size_h, cellArray[0][0].getCellType(), cellArray[0][0].getCellPrecision());
 
 
+    float fweight;
     int weight;
     int cellValue;
     int kernelCount = 1;
@@ -185,7 +187,8 @@ void Tile::programWeights(string inFileName,
                          << " kernel(s)" << endl;
                     kernelCount++;
                 }
-                inFile >> weight;
+                inFile >> fweight;
+                weight = int(fweight);
                 // cout << endl
                 //      << "[" << row << "][" << col << "]: Weight " <<
                 //      weightCount
@@ -209,7 +212,7 @@ void Tile::programWeights(string inFileName,
 
 DONE:
     cout << "Done mapping all the weights" << endl;
-    printFloorPlan("WeightFloorPlan", 0);
+    printFloorPlan("WeightFloorPlan.txt", 0);
     originalWeight(NumCellPerWeight, maxNumWeightPerRow, weight_precision);
 }
 
@@ -224,30 +227,30 @@ int separateBits(int value, int CellPrecision)
 
 void Tile::originalWeight(int NumCellPerWeight, int maxNumWeightPerRow, int weightPrecision, int sign)
 {
-    ofstream outfile("./FloorPlan/originalWeight", ios::out);
+    ofstream outfile("./FloorPlan/originalWeight.txt", ios::out);
     if (!outfile) {
         cerr << "Failed opening file" << endl;
         exit(1);
     }
-    outfile << " \t";
+    outfile << setw(10)  ;
     for (int j = 0; j < maxNumWeightPerRow; ++j) {
-        outfile << j << "\t";
+        outfile << j << setw(5);
     }
     outfile << endl;
 
 
 
     for (int i = 0; i < size_h; ++i) {
-        outfile << i << "\t";
+        outfile << i << setw(5);
         for (int j = 0; j < size_w; j = j + NumCellPerWeight) {
             int weight = 0;
             for (int cnt = 0; cnt < NumCellPerWeight; ++cnt) {
                 weight += (cellArray[i][cnt + j].getValue() << cnt);
                 if (cnt == NumCellPerWeight - 1) {
                     if (sign && weight > (pow(2,weightPrecision)/2 -1))
-                        outfile << weight - pow(2,weightPrecision) << "\t";
+                        outfile << weight - pow(2,weightPrecision) << setw(5) ;
                     else
-                        outfile << weight << "\t";
+                        outfile << weight << setw(5);
                 }
             }
         }
