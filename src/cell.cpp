@@ -65,8 +65,8 @@ int Cell::getCellType()
 
 void Cell::setVoltage(float VDD)
 {
-        BL = VDD;
-       
+    BL = VDD;
+
     // switch (cellType) {
     // case 0:  // SRAM
     //     BL = VDD;
