@@ -2,8 +2,8 @@
 #include <math.h>
 #include <experimental/filesystem>
 #include <fstream>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include "cell.h"
 #include "param.h"
 
@@ -132,7 +132,7 @@ void Tile::programWeights(string inFileName,
                           int weight_precision)
 {
     int kernelSize = kernel_w * kernel_h * kernel_c;
-    if(kernelSize>size_h)
+    if (kernelSize > size_h)
         kernelSize = size_h;
     int CellPrecision = cellArray[0][0].getCellPrecision();
     int NumCellPerWeight = ceil(weight_precision / CellPrecision);
@@ -156,15 +156,18 @@ void Tile::programWeights(string inFileName,
     cout << "Maximum number of weights stored per row = " << maxNumWeightPerRow
          << endl;
 
-    if (kernelSize > size_h) { //this is wrong, should accumulate the result, fix later
-        // cout << "ERROR: Kernel size should be smaller than number of weights "
+    if (kernelSize >
+        size_h) {  // this is wrong, should accumulate the result, fix later
+        // cout << "ERROR: Kernel size should be smaller than number of weights
+        // "
         //         "that can be stored in a column"
         //      << endl;
         // exit(1);
         kernelSize = size_h;
     }
 
-    initializeCell(size_w, size_h, cellArray[0][0].getCellType(), cellArray[0][0].getCellPrecision());
+    initializeCell(size_w, size_h, cellArray[0][0].getCellType(),
+                   cellArray[0][0].getCellPrecision());
 
 
     float fweight;
@@ -174,40 +177,39 @@ void Tile::programWeights(string inFileName,
     int weightCount = 0;
     // for (int rowset = 0; rowset < maxNumKernelPerColumn; ++rowset) {
     int rowset = 0;
-        if (size_h - rowset * kernelSize <
-            kernelSize) {  // check if the remaining rows can
-                           // accomodate the next kernel
-            cout << "Not enough crossbar cells to map next kernel" << endl;
-            goto DONE;
-        }
-        for (int col = 0; col < size_w; col = col + NumCellPerWeight) {
-            for (int row = 0; row < kernelSize; ++row) {
-                if (row == kernelSize - 1) {
-                    cout << "Finished programming " << kernelCount
-                         << " kernel(s)" << endl;
-                    kernelCount++;
-                }
-                inFile >> fweight;
-                weight = int(fweight);
-                // cout << endl
-                //      << "[" << row << "][" << col << "]: Weight " <<
-                //      weightCount
-                //      << " = " << weight << endl;
-                for (int cell = 0; cell < NumCellPerWeight;
-                     ++cell) {  // LSB -> MSB
-                    if (weight == 0)
-                        break;
-                    cellValue = separateBits(weight, CellPrecision);
-                    weight = weight >> CellPrecision;
-                    cellArray[row + rowset * kernelSize][cell + col].setValue(
-                        cellValue);
-                }
-                if (inFile.eof())
-                    goto DONE;
-
-                weightCount++;
+    if (size_h - rowset * kernelSize <
+        kernelSize) {  // check if the remaining rows can
+                       // accomodate the next kernel
+        cout << "Not enough crossbar cells to map next kernel" << endl;
+        goto DONE;
+    }
+    for (int col = 0; col < size_w; col = col + NumCellPerWeight) {
+        for (int row = 0; row < kernelSize; ++row) {
+            if (row == kernelSize - 1) {
+                cout << "Finished programming " << kernelCount << " kernel(s)"
+                     << endl;
+                kernelCount++;
             }
+            inFile >> fweight;
+            weight = int(fweight);
+            // cout << endl
+            //      << "[" << row << "][" << col << "]: Weight " <<
+            //      weightCount
+            //      << " = " << weight << endl;
+            for (int cell = 0; cell < NumCellPerWeight; ++cell) {  // LSB -> MSB
+                if (weight == 0)
+                    break;
+                cellValue = separateBits(weight, CellPrecision);
+                weight = weight >> CellPrecision;
+                cellArray[row + rowset * kernelSize][cell + col].setValue(
+                    cellValue);
+            }
+            if (inFile.eof())
+                goto DONE;
+
+            weightCount++;
         }
+    }
     // }
 
 DONE:
@@ -225,14 +227,17 @@ int separateBits(int value, int CellPrecision)
     return cellValue;
 }
 
-void Tile::originalWeight(int NumCellPerWeight, int maxNumWeightPerRow, int weightPrecision, int sign)
+void Tile::originalWeight(int NumCellPerWeight,
+                          int maxNumWeightPerRow,
+                          int weightPrecision,
+                          int sign)
 {
     ofstream outfile("./FloorPlan/originalWeight.txt", ios::out);
     if (!outfile) {
         cerr << "Failed opening file" << endl;
         exit(1);
     }
-    outfile << setw(10)  ;
+    outfile << setw(10);
     for (int j = 0; j < maxNumWeightPerRow; ++j) {
         outfile << j << setw(5);
     }
@@ -247,8 +252,8 @@ void Tile::originalWeight(int NumCellPerWeight, int maxNumWeightPerRow, int weig
             for (int cnt = 0; cnt < NumCellPerWeight; ++cnt) {
                 weight += (cellArray[i][cnt + j].getValue() << cnt);
                 if (cnt == NumCellPerWeight - 1) {
-                    if (sign && weight > (pow(2,weightPrecision)/2 -1))
-                        outfile << weight - pow(2,weightPrecision) << setw(5) ;
+                    if (sign && weight > (pow(2, weightPrecision) / 2 - 1))
+                        outfile << weight - pow(2, weightPrecision) << setw(5);
                     else
                         outfile << weight << setw(5);
                 }
@@ -323,53 +328,47 @@ float Tile::getCellPartialSum(int row, int col)
     return cellArray[row][col].getPartialSum();
 }
 
-float Tile::getPower(int input, float VGG, int bitNum) 
+float Tile::getPower(int input, float VGG, int bitNum)
 {
     int col;
-    if(input == 0)
+    if (input == 0)
         col = 0;
     else
         col = floor(log2(input)) + 1;
 
     // cout << "VGG: " << VGG << endl;
     // cout << "input: "<<input << ", power: " ;
-    if(bitNum == 6 && col>7){
-        cout << "no corresponding power table for " << col+1 << " bits input" << endl;
+    if (bitNum == 6 && col > 7) {
+        cout << "no corresponding power table for " << col + 1 << " bits input"
+             << endl;
         return -1;
-    }
-    else if(bitNum == 7 && col>8){
-        cout << "no corresponding power table for " << col+1 << " bits input" << endl;
+    } else if (bitNum == 7 && col > 8) {
+        cout << "no corresponding power table for " << col + 1 << " bits input"
+             << endl;
         return -1;
     }
 
 
-    if (VGG == 0.9f)
-    {
+    if (VGG == 0.9f) {
         // cout << powerTable6[0][col] << "E-05" << endl;
-        if(bitNum == 6)
+        if (bitNum == 6)
             return powerTable6[0][col];
         else
             return powerTable7[0][col];
-    }
-    else if (VGG == 0.8f)
-    {
+    } else if (VGG == 0.8f) {
         // cout << powerTable6[1][col] << "E-05" << endl;
-        if(bitNum == 6)
+        if (bitNum == 6)
             return powerTable6[1][col];
         else
             return powerTable7[1][col];
-    }
-    else if (VGG == 0.7f)
-    {
+    } else if (VGG == 0.7f) {
         // cout << powerTable6[2][col] << "E-05" << endl;
-        if(bitNum == 6)
+        if (bitNum == 6)
             return powerTable6[2][col];
         else
             return powerTable7[2][col];
-    }
-    else
-    {
-        cout << "no corresponding power table for VGG = " << VGG  << endl;
+    } else {
+        cout << "no corresponding power table for VGG = " << VGG << endl;
         return -1;
     }
 }
